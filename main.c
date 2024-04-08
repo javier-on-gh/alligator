@@ -32,38 +32,35 @@
 extern void init_modules(void);
 
 // Variable globales
-char INBFF[0x20];
+char INBUFF[0x20];
+
+
+// Prototipo
+void leeUART(void);
+void showBuff(void);
+
 
 int main(void)
 {
 	// Device initialization
 	//p init_modules(); //del builder
 	DrvUSART_Init(); //  Inicializa USART
-	//DrvTWI_Init(); // Inicializa  modulo i2c
+	DrvTWI_Init(); // Inicializa  modulo i2c
 	// Global interrupt enable
 	//p SEI();
 	DDRD |= (0x01<<PORTD1);
 	PORTD = 0x02;
 	
-	//DDRA = 0xff;
-	//PORTA = 0xff;
+
 	DDRB = 0xff;
 	PORTB = 0x01;
 	_delay_ms(500);
 	PORTB = 0x00;
 	
-	/*
 	
 	lcd_init(LCD_DISP_ON); // Inicia OLED
-	//ssd1306_lcd_clrscr();	// Limpia OLED
-	FillDisplay(0x00);
-	*/
-
-	// Ajuste de acuerdo a la fuente 1
-	//setCP();
-	
-	
-	
+	FillDisplay(0x00);		//ssd1306_lcd_clrscr();	// Limpia OLED
+		
 	//lcd_puts("98765432");
 	//_delay_ms(500);
 	/*
@@ -88,9 +85,53 @@ int main(void)
 		DrvTWI_SendStop();
 		while( !(inb(TWCR) & BV(TWSTO)) );//i2c_driver_stop();
 		*/
-		DrvUSART_SendStr("ATI\n");
+		DrvUSART_SendStr("AT\n");
 		_delay_ms(100);
+		
+		leeUART();
+		showBuff();
 
 	}
 	return 0;
+}
+
+
+void leeUART(){
+	int i=0;
+	char contLF=2;
+	char caracter;
+	while(contLF){
+		caracter = DrvUSART_GetChar();
+		if (caracter==0x0a) // Si caracter es igual a line feed
+		{
+			contLF--;
+			INBUFF[i]=caracter;
+			i++;
+		} 
+		else
+		{
+			INBUFF[i]=caracter;
+			i++;
+		}
+		
+	}
+}
+
+void showBuff(){
+	int i=0;
+	char caracter=0x00;
+	
+	while(caracter!=0x0a)
+	{
+		caracter = INBUFF[i];
+		i++;
+		
+		if (caracter != 0x0d)
+		{
+			if (caracter != 0x0a)
+			{
+				tst_data(caracter);
+			}
+		}	
+	}
 }
