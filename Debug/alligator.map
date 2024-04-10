@@ -5,14 +5,22 @@ c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/..
 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
                               C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o (exit)
 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_copy_data.o)
-                              main.o (__do_copy_data)
+                              lcdi2c.o (__do_copy_data)
 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_clear_bss.o)
                               DrvTWI.o (__do_clear_bss)
 
 Allocating common symbols
 Common symbol       size              file
 
+_backlightval       0x1               lcdi2c.o
+_displaycontrol     0x1               lcdi2c.o
+_numlines           0x1               lcdi2c.o
+_Addr               0x1               lcdi2c.o
 INBUFF              0x20              main.o
+_displaymode        0x1               lcdi2c.o
+_displayfunction    0x1               lcdi2c.o
+_cols               0x1               lcdi2c.o
+_rows               0x1               lcdi2c.o
 
 Discarded input sections
 
@@ -32,6 +40,24 @@ Discarded input sections
  .text          0x00000000        0x0 DrvUSART.o
  .data          0x00000000        0x0 DrvUSART.o
  .bss           0x00000000        0x0 DrvUSART.o
+ .text.DrvUSART_Init
+                0x00000000       0x1c DrvUSART.o
+ .text.DrvUSART_SendChar
+                0x00000000        0xe DrvUSART.o
+ .text.DrvUSART_GetChar
+                0x00000000        0xe DrvUSART.o
+ .text.DrvUSART_SendStr
+                0x00000000       0x1a DrvUSART.o
+ .debug_info    0x00000000      0x113 DrvUSART.o
+ .debug_abbrev  0x00000000       0xe0 DrvUSART.o
+ .debug_loc     0x00000000       0x7d DrvUSART.o
+ .debug_aranges
+                0x00000000       0x38 DrvUSART.o
+ .debug_ranges  0x00000000       0x28 DrvUSART.o
+ .debug_line    0x00000000      0x12f DrvUSART.o
+ .debug_str     0x00000000      0x1bb DrvUSART.o
+ .comment       0x00000000       0x31 DrvUSART.o
+ .debug_frame   0x00000000       0x60 DrvUSART.o
  .text          0x00000000        0x0 font.o
  .data          0x00000000        0x0 font.o
  .bss           0x00000000        0x0 font.o
@@ -44,15 +70,70 @@ Discarded input sections
  .debug_line    0x00000000       0x29 font.o
  .debug_str     0x00000000      0x179 font.o
  .comment       0x00000000       0x31 font.o
+ .text          0x00000000        0x0 lcdi2c.o
+ .data          0x00000000        0x0 lcdi2c.o
+ .bss           0x00000000        0x0 lcdi2c.o
+ .text.noBacklight
+                0x00000000        0xc lcdi2c.o
+ .text.backlight
+                0x00000000        0xe lcdi2c.o
+ .text.command  0x00000000        0x8 lcdi2c.o
+ .text.home     0x00000000       0x16 lcdi2c.o
+ .rodata        0x00000000        0x8 lcdi2c.o
+ .text.setCursor
+                0x00000000       0x64 lcdi2c.o
+ .text.noDisplay
+                0x00000000       0x14 lcdi2c.o
+ .text.display  0x00000000       0x16 lcdi2c.o
+ .text.noCursor
+                0x00000000       0x14 lcdi2c.o
+ .text.cursor   0x00000000       0x16 lcdi2c.o
+ .text.noBlink  0x00000000       0x14 lcdi2c.o
+ .text.blink    0x00000000       0x16 lcdi2c.o
+ .text.scrollDisplayLeft
+                0x00000000        0xa lcdi2c.o
+ .text.scrollDisplayRight
+                0x00000000        0xa lcdi2c.o
+ .text.leftToRight
+                0x00000000       0x16 lcdi2c.o
+ .text.rightToLeft
+                0x00000000       0x14 lcdi2c.o
+ .text.autoscroll
+                0x00000000       0x16 lcdi2c.o
+ .text.noAutoscroll
+                0x00000000       0x14 lcdi2c.o
+ .text.cursor_on
+                0x00000000        0x6 lcdi2c.o
+ .text.cursor_off
+                0x00000000        0x6 lcdi2c.o
+ .text.blink_on
+                0x00000000        0x6 lcdi2c.o
+ .text.blink_off
+                0x00000000        0x6 lcdi2c.o
+ .text.setBacklight
+                0x00000000       0x10 lcdi2c.o
+ COMMON         0x00000000        0x8 lcdi2c.o
  .text          0x00000000        0x0 main.o
  .data          0x00000000        0x0 main.o
  .bss           0x00000000        0x0 main.o
+ .text.leeUART  0x00000000       0x3a main.o
+ .text.showBuff
+                0x00000000       0x34 main.o
+ COMMON         0x00000000       0x20 main.o
  .text          0x00000000        0x0 oled.o
  .data          0x00000000        0x0 oled.o
  .bss           0x00000000        0x0 oled.o
+ .text.tst_comando
+                0x00000000       0x74 oled.o
+ .text.tst_data
+                0x00000000       0x76 oled.o
+ .text.lcd_command
+                0x00000000       0x88 oled.o
  .text.setCP    0x00000000       0x52 oled.o
  .text.lcd_data
                 0x00000000       0x90 oled.o
+ .text.lcd_init
+                0x00000000       0x56 oled.o
  .text.lcd_putc
                 0x00000000       0x50 oled.o
  .text.lcd_puts
@@ -64,8 +145,22 @@ Discarded input sections
                 0x00000000       0x80 oled.o
  .text.oledPutString
                 0x00000000       0x2e oled.o
+ .text.FillDisplay
+                0x00000000       0x3c oled.o
+ .progmem.data.init_sequence
+                0x00000000       0x1b oled.o
  .progmem.data.dlist1
                 0x00000000        0x5 oled.o
+ .debug_info    0x00000000      0x71b oled.o
+ .debug_abbrev  0x00000000      0x173 oled.o
+ .debug_loc     0x00000000      0x70e oled.o
+ .debug_aranges
+                0x00000000       0x78 oled.o
+ .debug_ranges  0x00000000       0x80 oled.o
+ .debug_line    0x00000000      0x4b3 oled.o
+ .debug_str     0x00000000      0x284 oled.o
+ .comment       0x00000000       0x31 oled.o
+ .debug_frame   0x00000000      0x160 oled.o
  .text          0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_udivmodhi4.o)
  .data          0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_udivmodhi4.o)
  .bss           0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_udivmodhi4.o)
@@ -148,6 +243,7 @@ LOAD C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/
 LOAD DrvTWI.o
 LOAD DrvUSART.o
 LOAD font.o
+LOAD lcdi2c.o
 LOAD main.o
 LOAD oled.o
 START GROUP
@@ -259,7 +355,7 @@ END GROUP
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000      0x46c
+.text           0x00000000      0x310
  *(.vectors)
  .vectors       0x00000000       0x68 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
                 0x00000000                __vector_default
@@ -275,39 +371,35 @@ END GROUP
  *libprintf_flt.a:*(.progmem.data)
  *libc.a:*(.progmem.data)
  *(.progmem*)
- .progmem.data.init_sequence
-                0x00000068       0x1b oled.o
-                0x00000068                init_sequence
-                0x00000084                . = ALIGN (0x2)
- *fill*         0x00000083        0x1 
+                0x00000068                . = ALIGN (0x2)
  *(.jumptables)
  *(.jumptables*)
  *(.lowtext)
  *(.lowtext*)
-                0x00000084                __ctors_start = .
+                0x00000068                __ctors_start = .
  *(.ctors)
-                0x00000084                __ctors_end = .
-                0x00000084                __dtors_start = .
+                0x00000068                __ctors_end = .
+                0x00000068                __dtors_start = .
  *(.dtors)
-                0x00000084                __dtors_end = .
+                0x00000068                __dtors_end = .
  SORT(*)(.ctors)
  SORT(*)(.dtors)
  *(.init0)
- .init0         0x00000084        0x0 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
-                0x00000084                __init
+ .init0         0x00000068        0x0 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
+                0x00000068                __init
  *(.init0)
  *(.init1)
  *(.init1)
  *(.init2)
- .init2         0x00000084        0xc C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
+ .init2         0x00000068        0xc C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
  *(.init2)
  *(.init3)
  *(.init3)
  *(.init4)
- .init4         0x00000090       0x16 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_copy_data.o)
-                0x00000090                __do_copy_data
- .init4         0x000000a6       0x10 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_clear_bss.o)
-                0x000000a6                __do_clear_bss
+ .init4         0x00000074       0x16 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_copy_data.o)
+                0x00000074                __do_copy_data
+ .init4         0x0000008a       0x10 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_clear_bss.o)
+                0x0000008a                __do_clear_bss
  *(.init4)
  *(.init5)
  *(.init5)
@@ -318,86 +410,76 @@ END GROUP
  *(.init8)
  *(.init8)
  *(.init9)
- .init9         0x000000b6        0x8 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
+ .init9         0x0000009a        0x8 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
  *(.init9)
  *(.text)
- .text          0x000000be        0x4 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
-                0x000000be                __vector_22
-                0x000000be                __vector_1
-                0x000000be                __vector_24
-                0x000000be                __vector_12
-                0x000000be                __bad_interrupt
-                0x000000be                __vector_6
-                0x000000be                __vector_3
-                0x000000be                __vector_23
-                0x000000be                __vector_25
-                0x000000be                __vector_11
-                0x000000be                __vector_13
-                0x000000be                __vector_17
-                0x000000be                __vector_19
-                0x000000be                __vector_7
-                0x000000be                __vector_5
-                0x000000be                __vector_4
-                0x000000be                __vector_9
-                0x000000be                __vector_2
-                0x000000be                __vector_21
-                0x000000be                __vector_15
-                0x000000be                __vector_8
-                0x000000be                __vector_14
-                0x000000be                __vector_10
-                0x000000be                __vector_16
-                0x000000be                __vector_18
-                0x000000be                __vector_20
-                0x000000c2                . = ALIGN (0x2)
+ .text          0x000000a2        0x4 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
+                0x000000a2                __vector_22
+                0x000000a2                __vector_1
+                0x000000a2                __vector_24
+                0x000000a2                __vector_12
+                0x000000a2                __bad_interrupt
+                0x000000a2                __vector_6
+                0x000000a2                __vector_3
+                0x000000a2                __vector_23
+                0x000000a2                __vector_25
+                0x000000a2                __vector_11
+                0x000000a2                __vector_13
+                0x000000a2                __vector_17
+                0x000000a2                __vector_19
+                0x000000a2                __vector_7
+                0x000000a2                __vector_5
+                0x000000a2                __vector_4
+                0x000000a2                __vector_9
+                0x000000a2                __vector_2
+                0x000000a2                __vector_21
+                0x000000a2                __vector_15
+                0x000000a2                __vector_8
+                0x000000a2                __vector_14
+                0x000000a2                __vector_10
+                0x000000a2                __vector_16
+                0x000000a2                __vector_18
+                0x000000a2                __vector_20
+                0x000000a6                . = ALIGN (0x2)
  *(.text.*)
  .text.DrvTWI_SetBitrate
-                0x000000c2       0x38 DrvTWI.o
-                0x000000c2                DrvTWI_SetBitrate
+                0x000000a6       0x38 DrvTWI.o
+                0x000000a6                DrvTWI_SetBitrate
  .text.DrvTWI_Init
-                0x000000fa       0x24 DrvTWI.o
-                0x000000fa                DrvTWI_Init
- .text.DrvUSART_Init
-                0x0000011e       0x1c DrvUSART.o
-                0x0000011e                DrvUSART_Init
- .text.DrvUSART_SendChar
-                0x0000013a        0xe DrvUSART.o
-                0x0000013a                DrvUSART_SendChar
- .text.DrvUSART_GetChar
-                0x00000148        0xe DrvUSART.o
-                0x00000148                DrvUSART_GetChar
- .text.DrvUSART_SendStr
-                0x00000156       0x1a DrvUSART.o
-                0x00000156                DrvUSART_SendStr
- .text.leeUART  0x00000170       0x3a main.o
-                0x00000170                leeUART
- .text.showBuff
-                0x000001aa       0x34 main.o
-                0x000001aa                showBuff
- .text.main     0x000001de       0x5e main.o
-                0x000001de                main
- .text.tst_comando
-                0x0000023c       0x74 oled.o
-                0x0000023c                tst_comando
- .text.tst_data
-                0x000002b0       0x76 oled.o
-                0x000002b0                tst_data
- .text.lcd_command
-                0x00000326       0x88 oled.o
-                0x00000326                lcd_command
- .text.lcd_init
-                0x000003ae       0x56 oled.o
-                0x000003ae                lcd_init
- .text.FillDisplay
-                0x00000404       0x3c oled.o
-                0x00000404                FillDisplay
+                0x000000de       0x24 DrvTWI.o
+                0x000000de                DrvTWI_Init
+ .text.expanderWrite
+                0x00000102       0x5e lcdi2c.o
+                0x00000102                expanderWrite
+ .text.pulseEnable
+                0x00000160       0x22 lcdi2c.o
+                0x00000160                pulseEnable
+ .text.write4bits
+                0x00000182       0x12 lcdi2c.o
+                0x00000182                write4bits
+ .text.send     0x00000194       0x2c lcdi2c.o
+                0x00000194                send
+ .text.clear    0x000001c0       0x16 lcdi2c.o
+                0x000001c0                clear
+ .text.lcdSendChar
+                0x000001d6        0x8 lcdi2c.o
+                0x000001d6                lcdSendChar
+ .text.lcdSendStr
+                0x000001de       0x1a lcdi2c.o
+                0x000001de                lcdSendStr
+ .text.lcd_inicio
+                0x000001f8       0x9e lcdi2c.o
+                0x000001f8                lcd_inicio
+ .text.main     0x00000296       0x4e main.o
+                0x00000296                main
  .text.libgcc.div
-                0x00000440       0x28 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_udivmodhi4.o)
-                0x00000440                __udivmodhi4
-                0x00000468                . = ALIGN (0x2)
+                0x000002e4       0x28 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_udivmodhi4.o)
+                0x000002e4                __udivmodhi4
+                0x0000030c                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x00000468        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
-                0x00000468                _exit
-                0x00000468                exit
+ .fini9         0x0000030c        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
+                0x0000030c                _exit
+                0x0000030c                exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -416,11 +498,11 @@ END GROUP
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x00000468        0x4 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
+ .fini0         0x0000030c        0x4 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
  *(.fini0)
-                0x0000046c                _etext = .
+                0x00000310                _etext = .
 
-.data           0x00800100        0x4 load address 0x0000046c
+.data           0x00800100       0x14 load address 0x00000310
                 0x00800100                PROVIDE (__data_start, .)
  *(.data)
  *(.data*)
@@ -428,29 +510,27 @@ END GROUP
  *(.rodata)
  *(.rodata*)
  .rodata.str1.1
-                0x00800100        0x4 main.o
+                0x00800100       0x14 main.o
  *(.gnu.linkonce.r*)
-                0x00800104                . = ALIGN (0x2)
-                0x00800104                _edata = .
-                0x00800104                PROVIDE (__data_end, .)
+                0x00800114                . = ALIGN (0x2)
+                0x00800114                _edata = .
+                0x00800114                PROVIDE (__data_end, .)
 
-.bss            0x00800104       0x21
-                0x00800104                PROVIDE (__bss_start, .)
+.bss            0x00800114        0x1
+                0x00800114                PROVIDE (__bss_start, .)
  *(.bss)
  *(.bss*)
- .bss.twiState  0x00800104        0x1 DrvTWI.o
+ .bss.twiState  0x00800114        0x1 DrvTWI.o
  *(COMMON)
- COMMON         0x00800105       0x20 main.o
-                0x00800105                INBUFF
-                0x00800125                PROVIDE (__bss_end, .)
-                0x0000046c                __data_load_start = LOADADDR (.data)
-                0x00000470                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x00800115                PROVIDE (__bss_end, .)
+                0x00000310                __data_load_start = LOADADDR (.data)
+                0x00000324                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x00800125        0x0
+.noinit         0x00800115        0x0
                 [!provide]                PROVIDE (__noinit_start, .)
  *(.noinit*)
                 [!provide]                PROVIDE (__noinit_end, .)
-                0x00800125                _end = .
+                0x00800115                _end = .
                 [!provide]                PROVIDE (__heap_start, .)
 
 .eeprom         0x00810000        0x0
@@ -494,9 +574,8 @@ END GROUP
  *(.comment)
  .comment       0x00000000       0x30 DrvTWI.o
                                  0x31 (size before relaxing)
- .comment       0x00000030       0x31 DrvUSART.o
+ .comment       0x00000030       0x31 lcdi2c.o
  .comment       0x00000030       0x31 main.o
- .comment       0x00000030       0x31 oled.o
 
 .note.gnu.avr.deviceinfo
                 0x00000000       0x40
@@ -518,69 +597,60 @@ END GROUP
 .debug_sfnames
  *(.debug_sfnames)
 
-.debug_aranges  0x00000000      0x128
+.debug_aranges  0x00000000      0x180
  *(.debug_aranges)
  .debug_aranges
                 0x00000000       0x48 DrvTWI.o
  .debug_aranges
-                0x00000048       0x38 DrvUSART.o
+                0x00000048      0x108 lcdi2c.o
  .debug_aranges
-                0x00000080       0x30 main.o
- .debug_aranges
-                0x000000b0       0x78 oled.o
+                0x00000150       0x30 main.o
 
 .debug_pubnames
  *(.debug_pubnames)
 
-.debug_info     0x00000000     0x13bf
+.debug_info     0x00000000     0x1885
  *(.debug_info .gnu.linkonce.wi.*)
  .debug_info    0x00000000      0x5f4 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
  .debug_info    0x000005f4      0x2cb DrvTWI.o
- .debug_info    0x000008bf      0x113 DrvUSART.o
- .debug_info    0x000009d2      0x2d2 main.o
- .debug_info    0x00000ca4      0x71b oled.o
+ .debug_info    0x000008bf      0xca3 lcdi2c.o
+ .debug_info    0x00001562      0x323 main.o
 
-.debug_abbrev   0x00000000      0xa80
+.debug_abbrev   0x00000000      0xa20
  *(.debug_abbrev)
  .debug_abbrev  0x00000000      0x5a2 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
  .debug_abbrev  0x000005a2      0x12f DrvTWI.o
- .debug_abbrev  0x000006d1       0xe0 DrvUSART.o
- .debug_abbrev  0x000007b1      0x15c main.o
- .debug_abbrev  0x0000090d      0x173 oled.o
+ .debug_abbrev  0x000006d1      0x1e5 lcdi2c.o
+ .debug_abbrev  0x000008b6      0x16a main.o
 
-.debug_line     0x00000000      0xba9
+.debug_line     0x00000000      0xaff
  *(.debug_line .debug_line.* .debug_line_end)
  .debug_line    0x00000000      0x134 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
  .debug_line    0x00000134      0x258 DrvTWI.o
- .debug_line    0x0000038c      0x12f DrvUSART.o
- .debug_line    0x000004bb      0x23b main.o
- .debug_line    0x000006f6      0x4b3 oled.o
+ .debug_line    0x0000038c      0x54d lcdi2c.o
+ .debug_line    0x000008d9      0x226 main.o
 
-.debug_frame    0x00000000      0x298
+.debug_frame    0x00000000      0x308
  *(.debug_frame)
  .debug_frame   0x00000000       0x74 DrvTWI.o
- .debug_frame   0x00000074       0x60 DrvUSART.o
- .debug_frame   0x000000d4       0x64 main.o
- .debug_frame   0x00000138      0x160 oled.o
+ .debug_frame   0x00000074      0x230 lcdi2c.o
+ .debug_frame   0x000002a4       0x64 main.o
 
-.debug_str      0x00000000      0x6c0
+.debug_str      0x00000000      0x750
  *(.debug_str)
  .debug_str     0x00000000      0x208 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
  .debug_str     0x00000208      0x2cc DrvTWI.o
                                 0x305 (size before relaxing)
- .debug_str     0x000004d4       0x59 DrvUSART.o
-                                0x1bb (size before relaxing)
- .debug_str     0x0000052d       0xa2 main.o
-                                0x249 (size before relaxing)
- .debug_str     0x000005cf       0xf1 oled.o
-                                0x284 (size before relaxing)
+ .debug_str     0x000004d4      0x229 lcdi2c.o
+                                0x39f (size before relaxing)
+ .debug_str     0x000006fd       0x53 main.o
+                                0x289 (size before relaxing)
 
-.debug_loc      0x00000000      0xb30
+.debug_loc      0x00000000      0xb3b
  *(.debug_loc)
  .debug_loc     0x00000000      0x204 DrvTWI.o
- .debug_loc     0x00000204       0x7d DrvUSART.o
- .debug_loc     0x00000281      0x1a1 main.o
- .debug_loc     0x00000422      0x70e oled.o
+ .debug_loc     0x00000204      0x7de lcdi2c.o
+ .debug_loc     0x000009e2      0x159 main.o
 
 .debug_macinfo
  *(.debug_macinfo)
@@ -600,12 +670,11 @@ END GROUP
 .debug_pubtypes
  *(.debug_pubtypes)
 
-.debug_ranges   0x00000000      0x100
+.debug_ranges   0x00000000      0x150
  *(.debug_ranges)
  .debug_ranges  0x00000000       0x38 DrvTWI.o
- .debug_ranges  0x00000038       0x28 DrvUSART.o
- .debug_ranges  0x00000060       0x20 main.o
- .debug_ranges  0x00000080       0x80 oled.o
+ .debug_ranges  0x00000038       0xf8 lcdi2c.o
+ .debug_ranges  0x00000130       0x20 main.o
 
 .debug_macro
  *(.debug_macro)

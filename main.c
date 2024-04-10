@@ -23,7 +23,7 @@
 #include <util/delay.h>
 #include <stdlib.h>
 #include "oled.h"
-
+#include "lcdi2c.h"
 
 
 
@@ -44,7 +44,7 @@ int main(void)
 {
 	// Device initialization
 	//p init_modules(); //del builder
-	DrvUSART_Init(); //  Inicializa USART
+	//DrvUSART_Init(); //  Inicializa USART
 	DrvTWI_Init(); // Inicializa  modulo i2c
 	// Global interrupt enable
 	//p SEI();
@@ -56,6 +56,25 @@ int main(void)
 	PORTB = 0x01;
 	_delay_ms(500);
 	PORTB = 0x00;
+	
+	
+	/* prueba de pantalla de caracteres lcd interfaz i2c
+	*/
+
+	lcd_inicio();
+	clear();
+	lcdSendStr("Balatron INDUSTRIAL");
+	
+	while (1)
+	{
+		
+		
+		//expanderWrite(0xaa);
+		//send(0x42,0x01);
+		_delay_ms(200);
+		
+	}
+	
 	
 	
 	lcd_init(LCD_DISP_ON); // Inicia OLED

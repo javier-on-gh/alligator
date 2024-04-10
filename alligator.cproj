@@ -144,6 +144,12 @@
     <Compile Include="global.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="lcdi2c.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lcdi2c.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="macros_auto.h">
       <SubType>compile</SubType>
     </Compile>

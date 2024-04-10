@@ -8,6 +8,8 @@ DrvUSART.c
 
 font.c
 
+lcdi2c.c
+
 main.c
 
 oled.c
