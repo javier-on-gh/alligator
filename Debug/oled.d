@@ -10,7 +10,8 @@ oled.d oled.o: .././oled.c .././allinone.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\version.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\fuse.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\lock.h \
- .././global.h .././macros_auto.h .././DrvUSART.h .././DrvTWI.h \
+ .././global.h .././lgt8f328p_spec.h .././lgt8f328p_gcc.h \
+ .././macros_auto.h .././DrvUSART.h .././DrvTWI.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\string.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\lib\gcc\avr\5.4.0\include\stddef.h \
  .././oled.h \
@@ -42,6 +43,10 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\
 c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\lock.h:
 
 .././global.h:
+
+.././lgt8f328p_spec.h:
+
+.././lgt8f328p_gcc.h:
 
 .././macros_auto.h:
 

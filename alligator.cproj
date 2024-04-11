@@ -123,6 +123,12 @@
     <Compile Include="allinone.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="DrvSYS.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="DrvSYS.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="DrvTWI.c">
       <SubType>compile</SubType>
     </Compile>
@@ -148,6 +154,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="lcdi2c.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lgt8f328p_gcc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lgt8f328p_spec.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="macros_auto.h">

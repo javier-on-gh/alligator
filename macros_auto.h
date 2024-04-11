@@ -1,5 +1,5 @@
 //======================================================
-// Auto generated file : 25/03/2024 07:02:09 p. m.
+// Auto generated file : 11/04/2024 08:26:42 a. m.
 // Macro's definition based on LGTSDK configuration
 // This file will be override by LGTSDK!!!
 //======================================================
@@ -151,16 +151,16 @@
 
 // Macro definition for: System Settings
 #define MCK_CKOSEL 	0x0  	// disable CLKO output
-#define MCK_OSCMEN 	0
+#define MCK_OSCMEN 	1
 #define MCK_OSCKEN 	0
 #define SYS_SWDD 	0
 #define SYS_E6EN 	1
 #define SYS_C6EN 	0
-#define MCK_MCLKSEL 	0x0  	// Internal 32MHz RC/OSC
-#define MCK_FOSC 	16000000
-#define MCK_CLKDIV 	0x3  	// MCLK/8
-#define MCK_RCMEN 	1
-#define MCK_RCKEN 	1
+#define MCK_MCLKSEL 	0x1  	// External 400Hz~32MHz Crystal
+#define MCK_FOSC 	18432000
+#define MCK_CLKDIV 	0x1  	// MCLK/2
+#define MCK_RCMEN 	0
+#define MCK_RCKEN 	0
 
 // Macro definition for: ADC Module
 #define ADC_DIDR01 	0
@@ -184,7 +184,7 @@
 #define TWI_ADDR 	0x20
 #define TWI_GCE 	0
 #define TWI_TWINT 	0
-#define TWI_BITRATE 	400 // originalmente 100 !!!!!
+#define TWI_BITRATE 	100
 #define TWI_TWBR 	16
 #define TWI_TWPS 	0x0  	// prescale by 1
 #define TWI_BUF_SIZE 	0x1  	// 1 byte buffer

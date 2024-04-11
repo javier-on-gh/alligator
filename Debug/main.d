@@ -10,7 +10,8 @@ main.d main.o: .././main.c .././allinone.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\version.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\fuse.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\lock.h \
- .././global.h .././macros_auto.h .././DrvUSART.h .././DrvTWI.h \
+ .././global.h .././lgt8f328p_spec.h .././lgt8f328p_gcc.h \
+ .././macros_auto.h .././DrvUSART.h .././DrvTWI.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\util\delay.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\util\delay_basic.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\math.h \
@@ -18,7 +19,7 @@ main.d main.o: .././main.c .././allinone.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\lib\gcc\avr\5.4.0\include\stddef.h \
  .././oled.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\pgmspace.h \
- .././lcdi2c.h
+ .././lcdi2c.h .././DrvSYS.h
 
 .././allinone.h:
 
@@ -46,6 +47,10 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\
 
 .././global.h:
 
+.././lgt8f328p_spec.h:
+
+.././lgt8f328p_gcc.h:
+
 .././macros_auto.h:
 
 .././DrvUSART.h:
@@ -67,3 +72,5 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\lib\
 c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\pgmspace.h:
 
 .././lcdi2c.h:
+
+.././DrvSYS.h:

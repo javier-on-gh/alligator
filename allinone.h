@@ -6,15 +6,15 @@
 
 
 #ifndef F_CPU
-#define F_CPU 4000000UL
+#define F_CPU 9216000UL
 #endif
 
 
 ///Autogen start
 #include <avr/io.h>
 #include "global.h"
-//#include "lgt8f328p_spec.h"
-//#include "lgt8f328p_gcc.h"
+#include "lgt8f328p_spec.h"
+#include "lgt8f328p_gcc.h"
 #include "macros_auto.h"
 //#include "DrvEXINT.h"
 //#include "DrvGPIO.h"
