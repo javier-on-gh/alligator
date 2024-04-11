@@ -22,6 +22,7 @@
 #include "allinone.h" // del builder
 #include <util/delay.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "oled.h"
 #include "lcdi2c.h"
 #include "DrvUSART.h"
@@ -45,8 +46,8 @@ int main(void)
 	// Device initialization
 	//p init_modules(); //del builder
 	DrvUSART_Init(); //  Inicializa USART
-	//DrvTWI_Init(); // Inicializa  modulo i2c
-	//lcd_inicio();	// Inicializa pantalla LCD con i2c
+	DrvTWI_Init(); // Inicializa  modulo i2c
+	lcd_inicio();	// Inicializa pantalla LCD con i2c
 	//lcd_init(LCD_DISP_ON); // Inicia OLED
 	// Global interrupt enable
 	//p SEI();
@@ -60,8 +61,8 @@ int main(void)
 
 	
 // Mensaje inicial al arrancar
-	//clear(); // Limpia LCD
-	//lcdSendStr("BALATRON INDUSTR");
+	clear(); // Limpia LCD
+	lcdSendStr("BALATRON INDUSTR");
 	//FillDisplay(0x00);		//ssd1306_lcd_clrscr();	// Limpia OLED
 	/*
 	oledPutString("BALATRON", 0, 10);
@@ -73,14 +74,10 @@ int main(void)
 	while (1)
 	{
 		
-		//DrvUSART_SendChar(0x30);
 		DrvUSART_SendStr("at\r\n");
-	
-		//leeUART();
-		//showBuff();
-		
+		leeUART();
+		showBuff();
 		_delay_ms(500);
-
 	}
 	return 0;
 }
@@ -109,22 +106,28 @@ void leeUART(){
 
 void showBuff(){
 	int i=0;
+	int contLF=2;
 	char caracter=0x00;
-	
-	clear(); // Limpia LCD
-	
-	
-	while(caracter!=0x0a)
+	clear();
+	while(contLF)
 	{
 		caracter = INBUFF[i];
-		i++;
-		
-		if (caracter != 0x0d)
+		if (caracter==0x0a)
 		{
-			if (caracter != 0x0a)
+			contLF--;
+			lcdSendStr("lf");
+		} 
+		else
+		{
+			if (caracter==0x0d)
 			{
-				lcdSendChar(caracter);//tst_data(caracter);
+				lcdSendStr("cr");
+			} 
+			else
+			{
+				lcdSendChar(caracter);
 			}
-		}	
+		}
+		i++;
 	}
 }
