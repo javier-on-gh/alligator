@@ -23,7 +23,7 @@
 //#include "DrvTC0.h"
 //#include "DrvMISC.h"
 //#include "DrvSYS.h"
-//#include "DrvADC.h"
+#include "DrvADC.h"
 #include "DrvTWI.h"
 //#include "DrvPWR.h"
 ///Autogen end

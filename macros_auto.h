@@ -203,4 +203,10 @@
 #define PWR_IOCD6 	0
 #define PWR_IOCD7 	0
 
+// Macro definition for: Watch Dog Timer
+#define WDT_WCLKS 	0x1  	// WDT clocked by 32KHz RC
+#define WDT_MODE 	0x1  	// timeout for interrupt only
+#define WDT_WDP 	0x7  	// 256K cycles
+#define WDT_IEN 	1
+
 #endif

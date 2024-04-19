@@ -2,11 +2,15 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
+DrvADC.c
+
 DrvSYS.c
 
 DrvTWI.c
 
 DrvUSART.c
+
+DrvWDT.c
 
 font.c
 

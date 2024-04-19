@@ -123,6 +123,12 @@
     <Compile Include="allinone.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="DrvADC.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="DrvADC.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="DrvSYS.c">
       <SubType>compile</SubType>
     </Compile>
@@ -139,6 +145,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="DrvUSART.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="DrvWDT.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="DrvWDT.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="font.c">
