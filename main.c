@@ -12,12 +12,13 @@
  * Etapa 1:
  * 01/04/24	Activar OLED ssd1306 para depurar las respuestas del modulo BG95
  * Se unen los archvos generados por el builder LGT con un proyecto anterior con OLED
+ * Se implementa una maquina de estados para mandar y recibir comandos con el BG95
  */ 
 
+/* MAIN SM */
 #ifndef F_CPU
 #define F_CPU 9216000UL
 #endif
-
 
 #include <avr/interrupt.h>
 #include <avr/io.h>
@@ -26,6 +27,9 @@
 #include <util/delay.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
+#include <stdio.h> //unused
+#include <stddef.h> //unused
 
 #include "allinone.h" // del builder
 #include "oled.h"
@@ -33,26 +37,25 @@
 #include "DrvUSART.h"
 #include "DrvSYS.h"
 #include "DrvWDT.h"
+#include "state_machine.h"
 
 // Import external definitions
 extern void init_modules(void);
 
-// Variable globales
-char INBUFF[0x20];
+// Variables globales
+char *MESSAGE; //format: "at\r\n"
+char INBUFF[0x60] = {0}; //change size (?)
+char TEMP[0x78] = {0};
+char COORDS[0x60] = {0};
+bool data_received = false; // flag if communication is done
 
+int cntTM, cntTE;
 
 // Prototipos de funciones
 void leeUART(void);
 void showBuff(void);
 void iluminacion(void);
 void temperatura(void);
-
-
-// Variables globales
-int cntTM, cntTE;
-// Definicion de la variable estado
-enum state {dormido, muestreo, envio, movimiento} estado;
-
 
 // INTERRUPCION DE WDT
 ISR(WDT_vect)
@@ -75,13 +78,12 @@ ISR(WDT_vect)
 	PORTB &= ~(1 << PORTB5);
 }
 
-
 int main(void)
 {
 	// --- Inicializa parametros ---
 	cntTM = 0; // Contador de tiempo de muestreo de sensores
 	cntTE = 0; // Contador de tiempo de envio
-	estado = dormido;
+	
 	// ---Inicializa reloj para wdt---
 	u8 u8Reg;
 	u8Reg = PMCR | (WDT_WCLKS << 4);
@@ -92,146 +94,67 @@ int main(void)
 	// init_modules();  No se usa la inicializacion del builder
 	DrvSYS_Init();
 	DrvUSART_Init(); //  Inicializa USART
-	//DrvTWI_Init(); // Inicializa  modulo i2c
-	//lcd_inicio();	// Inicializa pantalla LCD con i2c
-	//lcd_init(LCD_DISP_ON); // Inicia OLED
+	DrvTWI_Init(); // Inicializa  modulo i2c
+	lcd_inicio();	// Inicializa pantalla LCD con i2c
 
 	//--- Inicia WDT y el modo de dormido --
 	asm("cli"); //__disable_interrupt();
 	asm("wdr");//__watchdog_reset();
-	/* Start timed equence */
+	// Start timed equence //
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
-	/* Set new prescaler(time-out) value = 64K cycles (~0.5 s) */
+	// Set new prescaler(time-out) value = 64K cycles (~0.5 s) //
 	WDTCSR =  0b11000100; // wdif - wdie - wdp3 - wdce - wde - wpd2 - wdp1 - wpd0
 	SEI(); //__enable_interrupt();
 	SMCR = 0x05; // modo = power down, habilita sleep
 	// ---
+	
 	//Indicacion de arranque
 	DDRB = 0xff; // prende un led o...
 	PORTB = 0x01; 
 	_delay_ms(500);
 	PORTB = 0x00;
-	// ... envia un mensaje a las pantallas
-	//clear(); // Limpia modulo de caracteres LCD 
-	//lcdSendStr("BALATRON INDUSTR"); // Mensaje en modulo de caracteres LCD
-	//FillDisplay(0x00);		//ssd1306_lcd_clrscr();	// Limpia OLED
-	/*
-	oledPutString("BALATRON", 0, 10);
-	oledPutString("PRUEBA BG95", 1, 0);
-	oledPutString("ENVIA UN COMANDO", 2, 0);
-	oledPutString("0123456789!@#$%^&*()-", 3, 0);
-	*/
-	
-	
 	//Configuracion de puerto de acuerdo al hardware
 	DDRD |= (0x01<<PORTD1);
 	PORTD = 0x02;
 
+	clear(); // Limpia modulo de caracteres LCD 
+	lcdSendStr("BALATRON"); // Mensaje en modulo de caracteres LCD
+	MESSAGE = "at\r\n";
+		
 	while (1)
 	{
-		switch(estado)
-		{
-			case dormido:
-				PORTB = 0x01;
-				break;
-			
-			case muestreo:
-				//iluminacion();
-				//temperatura();
-				PORTB = 0x02;
-				estado = dormido;
-				break;
-			
-			case envio:
-				PORTB = 0x04;
-				estado = dormido;
-				break;
-			
-			case movimiento:
-				PORTB = 0x08;
-				estado = dormido;
-				break;
-			
-			default:
-				estado = dormido;
-				break;
-		}
+		computeStateMachine();
+		/*
+		// searching in string
+		//char search[] = "ati\r\r\nQuectel\r\nBG95-M3\r\nRevision: BG95M3LAR02A03\r\n\r\nOK\r\n";
+		//char search[] = "ERROR";
+		//char *ptr = strstr(INBUFF, search);
+		//if (ptr != NULL) {
+		//clear();
+		////lcdSendStr("yea");
+		//lcdSendStr(ptr);
+		//}
+		//else {
+		//clear();
+		//lcdSendStr("nel");
+		//}
 		
-		asm("sleep");
-		asm("nop");
-		asm("nop");	
+		//iterating through a string
+		//char *str = "An example.";
+		//size_t i = 0;
+		//while (str[i] != '\0') {
+		//lcdSendChar(str[i]);
+		//i++;
+		//}
+		*/
 	}
 }
-
-/* Pruebas temporales */
-//
-	//while (1)
-	//{
-		//
-		//DrvUSART_SendStr("at\r\n");
-		//leeUART();
-		//showBuff();
-		//_delay_ms(500);
-	//}
-	//return 0;
-//}
-
-
-//void leeUART(){
-	//int i=0;
-	//char contLF=2;
-	//char caracter;
-	//while(contLF){
-		//caracter = DrvUSART_GetChar();
-		//if (caracter==0x0a) // Si caracter es igual a line feed
-		//{
-			//contLF--;
-			//INBUFF[i]=caracter;
-			//i++;
-		//} 
-		//else
-		//{
-			//INBUFF[i]=caracter;
-			//i++;
-		//}
-		//
-	//}
-//}
-//
-//void showBuff(){
-	//int i=0;
-	//int contLF=2;
-	//char caracter=0x00;
-	//clear();
-	//while(contLF)
-	//{
-		//caracter = INBUFF[i];
-		//if (caracter==0x0a)
-		//{
-			//contLF--;
-			//lcdSendStr("lf");
-		//} 
-		//else
-		//{
-			//if (caracter==0x0d)
-			//{
-				//lcdSendStr("cr");
-			//} 
-			//else
-			//{
-				//lcdSendChar(caracter);
-			//}
-		//}
-		//i++;
-	//}
-//}
 
 /*
 	ILUMINACION
 	Lee la iluminacion ambiental dentro del equipo
 	ADC6 <- ALS-PT19
 */
-
 void iluminacion(){
 	u16 luz;
 	PORTB |= (1<<PORTB5); //Energiza ALS-PT19
@@ -252,3 +175,86 @@ void iluminacion(){
 void temperatura(){
 	asm("nop");
 }
+
+
+
+
+// MAIN SIMPLIFIED //
+/*
+#ifndef F_CPU
+#define F_CPU 9216000UL
+#endif
+
+#include "allinone.h" // del builder
+#include <util/delay.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
+#include "oled.h"
+#include "lcdi2c.h"
+#include "DrvUSART.h"
+#include "DrvSYS.h"
+#include "state_machine.h"
+
+// global variables
+char *MESSAGE; //format: "at\r\n"
+char INBUFF[0x60] = {0}; //change size (?)
+char TEMP[0x78] = {0};
+char COORDS[0x60] = {0};
+bool data_received = false; // flag if communication is done
+
+// Function prototypes
+extern void init_modules(void); //external definitions
+
+int main(void)
+{
+	DrvSYS_Init(); // Initialize system clock //debug (add)
+	DrvUSART_Init(); // Initialize USART
+	DrvTWI_Init(); // Initialize I2C
+	lcd_inicio(); // Initialize LCD with I2C
+	//SEI(); //enable interrupts
+	
+	DDRD |= (0x01<<PORTD1); //OUT PD1
+	PORTD = 0x06; //High PD1 y PD2
+	DDRB = 0xff; //OUT PB
+	_delay_ms(500);
+
+	MESSAGE = "at\r\n"; //initialize message
+	//MESSAGE = "AT+QGPSLOC?\r\n";
+	clear(); // clear LCD
+	lcdSendStr("BALATRON");
+	//initStateMachine();
+	
+	while (1)
+	{
+		lcdSendStr("a");
+		//computeStateMachine();
+		
+		// searching in string
+		//char search[] = "ati\r\r\nQuectel\r\nBG95-M3\r\nRevision: BG95M3LAR02A03\r\n\r\nOK\r\n";
+		//char search[] = "ERROR";
+		//char *ptr = strstr(INBUFF, search);
+		//if (ptr != NULL) {
+			//clear();
+			////lcdSendStr("yea");
+			//lcdSendStr(ptr);
+		//}
+		//else {
+			//clear();
+			//lcdSendStr("nel");
+		//}
+		
+		//iterating through a string
+		//char *str = "An example.";
+		//size_t i = 0;
+		//while (str[i] != '\0') {
+			//lcdSendChar(str[i]);
+			//i++;
+		//}
+		_delay_ms(100);
+	}
+	return 0;
+}
+*/
