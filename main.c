@@ -50,6 +50,8 @@ char COORDS[0x60] = {0};
 bool data_received = false; // flag if communication is done
 
 int cntTM, cntTE;
+//int cntTM = 0;
+//int cntTE = 0;
 
 // Prototipos de funciones
 void leeUART(void);
@@ -60,6 +62,11 @@ void temperatura(void);
 // INTERRUPCION DE WDT
 ISR(WDT_vect)
 {
+	//clear();
+	//char str[20];
+	//sprintf(str, "%d", cntTM);
+	//lcdSendStr(str);
+	
 	WDTCSR |= (1<<WDIF); // Borra bandera
 	cntTE++;
 	cntTM++;
@@ -77,12 +84,35 @@ ISR(WDT_vect)
 	_delay_ms(25);
 	PORTB &= ~(1 << PORTB5);
 }
+// prueba:
+/*
+ISR(WDT_vect)
+{
+	WDTCSR |= (1 << WDIF);
+	cntTE++;
+	cntTM++;
+	if (cntTM == 10) // Muestrea sensores cada hora (approximately 10 seconds)
+	{
+		cntTM = 0;
+		estado = muestreo;
+	}
+	if (cntTE == 16) // Actualiza la nube cada 24 horas (approximately 10 seconds)
+	{
+		cntTE = 0;
+		estado = envio;
+	}
+	PORTB |= (1 << PORTB5);    // Set PB5 high
+	_delay_ms(25);
+	PORTB &= ~(1 << PORTB5);   // Set PB5 low
+}
+*/
 
 int main(void)
 {
 	// --- Inicializa parametros ---
 	cntTM = 0; // Contador de tiempo de muestreo de sensores
 	cntTE = 0; // Contador de tiempo de envio
+	estado = dormido;
 	
 	// ---Inicializa reloj para wdt---
 	u8 u8Reg;
@@ -104,6 +134,7 @@ int main(void)
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
 	// Set new prescaler(time-out) value = 64K cycles (~0.5 s) //
 	WDTCSR =  0b11000100; // wdif - wdie - wdp3 - wdce - wde - wpd2 - wdp1 - wpd0
+	//WDTCSR = (1 << WDP3) | (1 << WDP0); // prescaler value to 1024 (approximately 10 seconds)
 	SEI(); //__enable_interrupt();
 	SMCR = 0x05; // modo = power down, habilita sleep
 	// ---
@@ -116,14 +147,18 @@ int main(void)
 	//Configuracion de puerto de acuerdo al hardware
 	DDRD |= (0x01<<PORTD1);
 	PORTD = 0x02;
-
-	clear(); // Limpia modulo de caracteres LCD 
-	lcdSendStr("BALATRON"); // Mensaje en modulo de caracteres LCD
+	
+	//asm("cli");
+	//clear(); // Limpia modulo de caracteres LCD
+	//lcdSendStr("BALAT"); // Mensaje en modulo de caracteres LCD
+	//_delay_ms(3000);
+	//asm("sei");
+	
 	MESSAGE = "at\r\n";
-		
 	while (1)
 	{
-		computeStateMachine();
+		computeStateMachine();		
+		//_delay_ms(100);
 		/*
 		// searching in string
 		//char search[] = "ati\r\r\nQuectel\r\nBG95-M3\r\nRevision: BG95M3LAR02A03\r\n\r\nOK\r\n";

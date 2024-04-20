@@ -35,33 +35,49 @@ void computeStateMachine(void) {
 	switch(estado)
 	{
 		case dormido:
+			asm("cli");
 			clear();
 			lcdSendStr("dormido");
+			asm("sei");
 			PORTB = 0x01;
 			break;
 		
 		case muestreo:
+			asm("cli");
 			clear();
 			lcdSendStr("muestreo");
+			//_delay_ms(3000);
+			asm("sei");
+			
+			//clear();
+			//lcdSendStr("muestreo");
 			//iluminacion();
 			//temperatura();
 			//GPS();
+			
+			// FUNCIONA: si no nos interesa LCD, no es necesario desactivar interrupcion ///
+			//sendATCommands("AT+QGPS=1\r\n"); // debug para checar si enciende el GPS
+			asm("cli");
+			//new_show_BUFF(); //si queremos ver buffer
+			test_sendATCommands("ATT\r\n", TEMP, sizeof(TEMP)/sizeof(TEMP[0])); //GPS COORDS
+			_delay_ms(3000);
+			asm("sei");
 			
 			PORTB = 0x02;
 			estado = dormido;
 			break;
 		
 		case envio:
+			asm("cli");
 			clear();
 			lcdSendStr("envio");
+			asm("sei");
 			
 			PORTB = 0x04;
 			estado = dormido;
 			break;
 		
 		case movimiento:
-			clear();
-			lcdSendStr("envio");
 			
 			PORTB = 0x08;
 			estado = dormido;
@@ -76,6 +92,7 @@ void computeStateMachine(void) {
 	asm("nop");
 }
 
+/*debug Not ready yet*/
 void readGPS(){
 	/* SOME TESTS */
 	/*
@@ -122,7 +139,7 @@ void readGPS(){
 void sendATCommands(char *msg) {
 	DrvUSART_SendStr(msg);
 	new_read_UART(); // works perfect
-	new_show_BUFF(); //works for both cases
+	//new_show_BUFF(); //works for both cases
 }
 
 void test_sendATCommands(char *msg, char *buffer, size_t buff_size) {

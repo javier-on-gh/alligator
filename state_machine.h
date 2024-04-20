@@ -9,8 +9,7 @@
 #define STATE_MACHINE_H_
 
 // Definicion de la variable estado
-enum state {dormido, muestreo, envio, movimiento};
-extern enum state estado;
+enum state {dormido, muestreo, envio, movimiento} estado;
 
 void computeStateMachine(void);
 void sendATCommands(char *msg);
