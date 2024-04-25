@@ -26,10 +26,8 @@ extern char *MESSAGE;
 extern char INBUFF[0x60];
 extern char TEMP[0x78];
 extern char COORDS[0x60];
-extern bool data_received;
 bool commandOK = false;
 bool commandERROR = false; //flags to check if command was succesful or not
-
 
 void computeStateMachine(void) {
 	switch(estado)
@@ -39,6 +37,7 @@ void computeStateMachine(void) {
 			clear();
 			lcdSendStr("dormido");
 			asm("sei");
+			//if acelerometro se mueve: estado = movimiento
 			PORTB = 0x01;
 			break;
 		
@@ -46,20 +45,17 @@ void computeStateMachine(void) {
 			asm("cli");
 			clear();
 			lcdSendStr("muestreo");
-			//_delay_ms(3000);
 			asm("sei");
-			
-			//clear();
-			//lcdSendStr("muestreo");
 			//iluminacion();
 			//temperatura();
 			//GPS();
 			
 			// FUNCIONA: si no nos interesa LCD, no es necesario desactivar interrupcion ///
-			//sendATCommands("AT+QGPS=1\r\n"); // debug para checar si enciende el GPS
+			DrvUSART_SendStr("AT\r\n"); // debug para checar si enciende el GPS
+			_delay_ms(100);
+			
 			asm("cli");
-			//new_show_BUFF(); //si queremos ver buffer
-			test_sendATCommands("ATT\r\n", TEMP, sizeof(TEMP)/sizeof(TEMP[0])); //GPS COORDS
+			DrvUSART_GetString();
 			_delay_ms(3000);
 			asm("sei");
 			
@@ -67,18 +63,17 @@ void computeStateMachine(void) {
 			estado = dormido;
 			break;
 		
-		case envio:
+		case envio: //mandar a la nube
 			asm("cli");
 			clear();
-			lcdSendStr("envio");
+			lcdSendStr("enviando");
 			asm("sei");
 			
-			PORTB = 0x04;
+			//PORTB = 0x04; //debug ahora suena el buzzer
 			estado = dormido;
 			break;
 		
 		case movimiento:
-			
 			PORTB = 0x08;
 			estado = dormido;
 			break;
@@ -117,11 +112,10 @@ void readGPS(){
 	clear();
 	lcdSendStr("Done");
 	*/
-	sendATCommands("AT+QGPS=1\r\n"); //OK or ERROR (means its already on)
 	_delay_ms(2000);
-	test_sendATCommands("AT+QGPSLOC?\r\n", COORDS, sizeof(COORDS)/sizeof(COORDS[0])); //GPS COORDS
 	_delay_ms(4000);
 	/*
+	//guardarlo en otro buffer
 	//char COORDS[0x60] = {0};
 	//for (int i = 0; i < sizeof(INBUFF)/sizeof(INBUFF[0]); i++) {
 		//COORDS[i] = INBUFF[i];
@@ -129,23 +123,15 @@ void readGPS(){
 	*/
 	// GNSS off: //
 	//test_sendATCommands("AT+QGPSEND\r\n", TEMP, sizeof(TEMP)/sizeof(TEMP[0]));
-	test_sendATCommands("ATT\r\n", TEMP, sizeof(TEMP)/sizeof(TEMP[0]));
 	_delay_ms(2000);
 			
 	clear();
 	lcdSendStr("finished");
 }
 
-void sendATCommands(char *msg) {
+void test_sendATCommands(char *msg) {
 	DrvUSART_SendStr(msg);
-	new_read_UART(); // works perfect
-	//new_show_BUFF(); //works for both cases
-}
-
-void test_sendATCommands(char *msg, char *buffer, size_t buff_size) {
-	DrvUSART_SendStr(msg);
-	test_read_UART(buffer, buff_size);
-	//test_show_BUFF(buffer);
+	DrvUSART_GetString();
 }
 
 void clear_Buffer(char *buffer){ 
@@ -155,129 +141,32 @@ void clear_Buffer(char *buffer){
 	//}
 }
 
-/* WORKS PERFECT! PRINTS EVERY OUTPUT*/
-//try using a temporary buffer
-//try using pointer to OK
-/*
-void new_read_UART() {
-	clear_Buffer(INBUFF);
-	//commandOK = false;
-	//commandERROR = false;
-	char search[] = "OK\r\n";
-	char search2[] = "ERROR";	
-	int i = 0;
-	char caracter;
-	while (1) {
-		caracter = DrvUSART_GetChar();
-		INBUFF[i] = caracter;
-		i++;
-		if (caracter == 0x0a) {
-			char *ok = strstr(INBUFF, search);
-			char *error = strstr(INBUFF, search2);
-			if (ok) {
-				commandOK = true;
-				commandERROR = false;
-				break;
-			}
-			if (error) {
-				commandOK = false;
-				commandERROR = true;
-				break;
-			}
-		}
-	}
-	INBUFF[i] = '\0'; //null terminate
-}
-*/
-
-/* ALSO WORKS PERFECT! */
-void new_read_UART() {
-	clear_Buffer(INBUFF);
-	char search[] = "OK\r\n";
-	char search2[] = "ERROR";
-	int i = 0;
-	char caracter;
-	while (1) {
-		caracter = DrvUSART_GetChar();
-		INBUFF[i] = caracter;
-		i++;
-		
-		if (i >= sizeof(INBUFF) - 1) {
-			break;
-		}
-		
-		if (caracter == '\n') {
-			char *ok = strstr(INBUFF, search);
-			char *error = strstr(INBUFF, search2);
-			if (ok || error) {
-				commandOK = ok != NULL;
-				commandERROR = error != NULL;
-				break;
-			}
-		}
-	}
-	INBUFF[i] = '\0'; // Null terminate the string
-}
-/* WORKS PERFECT! */
-void new_show_BUFF(){
-	int i = 0;
-	char caracter=0x00;
-	clear();
-	while(1) {
-		caracter = INBUFF[i];
-		i++;
-		if (caracter==0x0a) {
-			lcdSendStr(" "); //send space
-		}
-		else {
-			if (caracter==0x0d) {
-				//lcdSendStr("cr");
-			}
-			else {
-				if (caracter == '\0') {
-					break;
-				}
-				lcdSendChar(caracter);
-			}
-		}
-		// iterate until null
-		if (caracter == '\0') {
-			break;
-		}
-	}
-}
-
-/* Both work */
 void test_read_UART(char *buffer, size_t buffer_size) {
 	clear_Buffer(buffer);
 	char search[] = "OK\r\n";
 	char search2[] = "ERROR";
 	int i = 0;
 	char caracter;
+	char *ok = NULL;
+	char *error = NULL;
+	
 	while (1) {
 		caracter = DrvUSART_GetChar();
 		buffer[i] = caracter;
 		i++;
 		
+		ok = strstr(buffer, search);
+		error = strstr(buffer, search2);
+		
 		if (i >= buffer_size - 1) {
 			break;
 		}
-		
 		if (caracter == '\n') {
-			char *ok = strstr(buffer, search);
-			char *error = strstr(buffer, search2);
-			//if (ok || error) {
-				//commandOK = ok != NULL;
-				//commandERROR = error != NULL;
-				//break;
-			//}
-			
-			/*To only show OK or ERROR*/
 			if (ok) {
 				commandOK = true;
 				commandERROR = false;
-				clear();
-				lcdSendStr(ok);
+				//clear();
+				//lcdSendStr(ok);
 				break;
 			}
 			if (error) {
@@ -285,10 +174,10 @@ void test_read_UART(char *buffer, size_t buffer_size) {
 				commandERROR = true;
 				clear();
 				if(*(error - 1) == '\n'){
-					lcdSendStr(error);
+					//lcdSendStr(error);
 				}
 				else{
-					lcdSendStr(error-5);
+					//lcdSendStr(error-5);
 				}
 				break;
 			}
@@ -296,6 +185,7 @@ void test_read_UART(char *buffer, size_t buffer_size) {
 	}
 	buffer[i] = '\0'; // Null terminate the string
 }
+
 void test_show_BUFF(char *buffer){
 	int i = 0;
 	char caracter=0x00;
@@ -317,76 +207,34 @@ void test_show_BUFF(char *buffer){
 				lcdSendChar(caracter);
 			}
 		}
-		// iterate until null
-		if (caracter == '\0') {
+		if ((caracter == '\0') || (i >= sizeof(INBUFF) - 1)) {
 			break;
 		}
 	}
 }
 
-float readTemperature() {
-	float temp = 32.5; //read temperature data from a sensor
-	return temp;
-}
-
-void readLight() {
-	//read light data from a sensor
-}
-
-
-
-
-/* Original UART - NOT STORING LF AND CR */
 /*
-void read_UART() {
-	char search[] = "OK";
-	char search2[] = "ERROR";
-	//char search3[] = "ERROR "; //when the error has a code we need to store
-	
-	int i = 0;
-	char caracter;
-	while (1) {
-		caracter = DrvUSART_GetChar();
-		if (caracter == 0x0A) { // Line feed
-			// Do nothing, skip storing it
-		}
-		else if (caracter == 0x0D) { // Carriage return
-			// Do nothing, skip storing it
-		}
-		else {
-			INBUFF[i] = caracter;
-			i++;
-		}
-		// iterate until finding "OK or ERROR"
-		char *ok = strstr(INBUFF, search);
-		char *error = strstr(INBUFF, search2);
-		if (ok || error) {
-			break;
-		}
-	}
-	INBUFF[i] = '\0'; //null terminate
-}
-
-// WORKS! (original 2) - STORING LF AND CR
-void read_UART() {
-	char search[] = "OK\r\n";
-	char search2[] = "ERROR\r\n";
-	//char search3[] = "ERROR "; //when the error has a code we need to store
-	
-	int i = 0;
-	char caracter;
-	while (1) {
-		caracter = DrvUSART_GetChar();
-		INBUFF[i] = caracter;
-		i++;
-		// iterate until finding "OK or ERROR"
-		char *ok = strstr(INBUFF, search);
-		char *error = strstr(INBUFF, search2);
-		if (ok || error) {
-			break;
-		}
-	}
-	INBUFF[i] = '\0'; //null terminate
-}
-
+	ILUMINACION
+	Lee la iluminacion ambiental dentro del equipo
+	ADC6 <- ALS-PT19
 */
+void iluminacion(){
+	u16 luz;
+	PORTB |= (1<<PORTB5); //Energiza ALS-PT19
+	DrvADC_Init(); //Inicializa ADC
+	_delay_us(500);
+	luz = DrvADC_readChannel(0x06);
+	// Para depuracion, descomentar 5 lineas:
+	//char a, b;
+	//a=ADCL;
+	//b=ADCH;
+	//DrvUSART_SendChar(a);
+	//DrvUSART_SendChar(b);
+	ADCSRA &= ~(1 << ADEN); //Deshabilita modulo ADC
+	PORTB &= ~(1 << PORTB5); // desenergiza ALS-PT19
+	//TODO: almacenar o promediar o notificar
+}
+
+void temperatura(){
+	asm("nop");
+}

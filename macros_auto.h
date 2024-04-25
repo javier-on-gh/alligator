@@ -129,9 +129,10 @@
 #define USART_UCPOL0 	0x0  	// Rise edge of XCK1
 #define USART_U2X0 	0
 #define USART_MPCM0 	0
-#define USART_RXC 	0
-#define USART_TXC 	0
-#define USART_UDRE 	0
+
+#define USART_RXC 	1  // RX Complete interrupt debug poner 1
+#define USART_TXC 	0  // TX Complete interrupt
+#define USART_UDRE 	0  // USART data register empty interrupt
 
 // Macro definition for: Timer/Counter 0
 #define TC0_CSX 	0x1  	// using T0CLK (= SYSCLK)

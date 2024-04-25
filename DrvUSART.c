@@ -1,47 +1,12 @@
-/*
-  							  	****************
-*******************************  C SOURCE FILE  **********************************
-** 								**************** 						        **
-** 																		        **
-** project  : BSPLGT8F328D												    	**
-** filename : DrvUSART.c	  		   	 										**
-** version  : 1.0 													   			**
-** date     : April 01, 2014 										   			**
-** 			  		 	 												   		**
-**********************************************************************************
-** 																		   		**
-** Copyright (c) 2014, 	LogicGreen Technologies Co., LTD						**
-** All rights reserved.                                                    		**
-**                                                                         		**
-**********************************************************************************
-VERSION HISTORY:
-----------------
-Version 	: 1.0
-Date 		: April 01, 2014
-Revised by 	: LogicGreen Software Group
-Description : Original version.
-*/
-
-/**
- * @file DrvUSART.c
- * @brief Source File of USART driver 
- */
-
-/** complier directives */
 #define _DRVUSART_SRC_
 
-/**********************************************************************************
-***					            MODULES USED									***													  	
-**********************************************************************************/ 
 #include "allinone.h"
-#include <stdbool.h>
-#include <stddef.h>
-extern bool data_received;
-	
-/**********************************************************************************
-***					     	 MACROS AND DEFINITIONS								***													  	
-**********************************************************************************/ 
-/* Arguments for USART initialize */
+#include "DrvUSART.h"
+
+#include "oled.h"
+#include "lcdi2c.h"
+#include <string.h>
+#include <util/delay.h>
 
 #if (USART_UMSEL0 == E_UMSEL0_UART)
 	#if (USART_U2X0 == TRUE)
@@ -55,16 +20,18 @@ extern bool data_received;
 
 #define USART_TXREN ((USART_RXEN << 4) | (USART_TXEN << 3))
 
-/**********************************************************************************
-*** 						  	EXPORTED FUNCTIONS								*** 													
-**********************************************************************************/
-/**
- * @fn void DrvUSART_Init(void)
- * @brief Initialize USART. \n
- *	The arguments of this function are macros (argU2X0,argMPCM0,argUMSEL0, \n
- *	argUCSZ0,argUSBS0,argUPM0, argUCPOL0). Before calling you should give the \n
- *	correct value to shese macros according your application
- */
+//////// INTERRUPTIONS ////////
+#define BUFFER_SIZE 128
+char rxBuffer[BUFFER_SIZE];
+uint8_t rxReadPos = 0;
+uint8_t rxWritePos = 0;
+
+ISR(USART_RX_vect) {
+	rxBuffer[rxWritePos] = UDR0;	
+	//if rxWritePos reaches buffer size, returns to 0
+	rxWritePos = (rxWritePos + 1) % BUFFER_SIZE;
+}
+
 void DrvUSART_Init(void)
 {
 #if (MMCU_PACKAGE == MMCU_SSOP20L)
@@ -87,40 +54,122 @@ void DrvUSART_Init(void)
 	UBRR0H = (USART_UBRR >> 8) & 0xff;
 	UBRR0L = USART_UBRR & 0xff;
 }
+/*
+void DrvUSART_Init(void)
+{
+	// Enable both TX and RX
+	UCSR0B = USART_TXREN;
 
-/**
- * @fn void DrvUSART_TransChar(u8 u8Char)
- */
+	// Set frame format: 8 data bits, no parity, 1 stop bit
+	UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
+
+	// Enable RX complete and USART data register empty interrupts
+	UCSR0B |= USART_RXCIE | USART_UDRIE;
+
+	// Calculate and set baud rate
+	UBRR0H = (USART_UBRR >> 8) & 0xff;
+	UBRR0L = USART_UBRR & 0xff;
+}
+*/
+
 void DrvUSART_SendChar(u8 u8Char)
 {
 	while(!(UCSR0A & (1 << UDRE0)));
 	UDR0 = u8Char;
 }
 
-/**
- * @fn u8 DrvUSART_RecvChar(void)
- */
-
-u8 DrvUSART_GetChar(void)
-{
-	while(!(UCSR0A & (1 << RXC0)));
-	data_received = true;
-	return UDR0;
-}
-
-/**
- * @fn void DrvUSART_SendStr(char *str)
- */
 void DrvUSART_SendStr(char *str)
 {
 	char *pt = str;
-
 	while(*pt)
 	{
 		DrvUSART_SendChar(*pt++);
 	}
 }
 
-/**********************************************************************************
-*** 									EOF 									*** 													
-**********************************************************************************/
+u8 DrvUSART_GetChar(void)
+{
+	while(!(UCSR0A & (1 << RXC0)));
+	return UDR0;
+}
+
+// GET STRING WORKS!!! (reads buffer filled on RXC interrupt) //
+// process to do something with "caracter"
+void DrvUSART_GetString(void) {
+	char caracter;
+	clear();
+	while (rxReadPos != rxWritePos) { // until it reaches write pos
+		caracter = rxBuffer[rxReadPos];
+		if (caracter == '\0') {
+			break;
+		}
+		else if (caracter == '\n') {
+			lcdSendStr(" "); //lf
+		}
+		else if (caracter == '\r') {
+			//lcdSendStr("cr");
+		}
+		else {
+			lcdSendChar(caracter);
+		}
+		//if rxReadPos reaches 127 it returns to 0
+		rxReadPos = (rxReadPos + 1) % BUFFER_SIZE;
+	}
+}
+
+// FOR TXC INTERRUPT (NOT NECESSARY RN)
+/*
+//char serialBuffer[BUFFER_SIZE];
+//uint8_t serialReadPos = 0;
+//uint8_t serialWritePos = 0;
+//ISR(USART_TX_vect)
+//{
+//lcdSendStr("TXC");
+//if(serialReadPos != serialWritePos)
+//{
+//UDR0 = serialBuffer[serialReadPos];
+//serialReadPos++;
+//if(serialReadPos >= BUFFER_SIZE)
+//{
+//serialReadPos = 0;
+//}
+//}
+//}
+
+//void appendSerial(char c)
+//{
+	//serialBuffer[serialWritePos] = c;
+	//serialWritePos++;
+	//if(serialWritePos >= BUFFER_SIZE)
+	//{
+		//serialWritePos = 0;
+	//}
+//}
+//
+//void serialWrite(const char *c)
+//{
+	//for(uint8_t i = 0; i < strlen(c); i++)
+	//{
+		//appendSerial(c[i]);
+	//}
+	//if(UCSR0A & (1 << UDRE0))
+	//{
+		//UDR0 = 0;
+	//}
+//}
+//
+//char getChar(void)
+//{
+	//char ret = '\0';
+	//if(rxReadPos != rxWritePos)
+	//{
+		//ret = rxBuffer[rxReadPos];
+		//rxReadPos++;
+		//if(rxReadPos >= BUFFER_SIZE)
+		//{
+			//rxReadPos = 0;
+		//}
+	//}
+	//return ret;
+//}
+*/
