@@ -48,7 +48,8 @@ void DrvUSART_Init(void);
 void DrvUSART_SendChar(u8 u8Char);
 void DrvUSART_SendStr(char* str);
 u8 DrvUSART_GetChar(void);
-void DrvUSART_GetString(void);
+void DrvUSART_GetString(void); //debug: cambiar a showString y hacer otra GETSTRING
+void processData(char *, size_t);
 
 //void appendSerial(char);
 //void serialWrite(const char *);

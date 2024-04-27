@@ -26,6 +26,8 @@ char rxBuffer[BUFFER_SIZE];
 uint8_t rxReadPos = 0;
 uint8_t rxWritePos = 0;
 
+char lastCommand[50];
+
 ISR(USART_RX_vect) {
 	rxBuffer[rxWritePos] = UDR0;	
 	//if rxWritePos reaches buffer size, returns to 0
@@ -54,23 +56,6 @@ void DrvUSART_Init(void)
 	UBRR0H = (USART_UBRR >> 8) & 0xff;
 	UBRR0L = USART_UBRR & 0xff;
 }
-/*
-void DrvUSART_Init(void)
-{
-	// Enable both TX and RX
-	UCSR0B = USART_TXREN;
-
-	// Set frame format: 8 data bits, no parity, 1 stop bit
-	UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
-
-	// Enable RX complete and USART data register empty interrupts
-	UCSR0B |= USART_RXCIE | USART_UDRIE;
-
-	// Calculate and set baud rate
-	UBRR0H = (USART_UBRR >> 8) & 0xff;
-	UBRR0L = USART_UBRR & 0xff;
-}
-*/
 
 void DrvUSART_SendChar(u8 u8Char)
 {
@@ -78,13 +63,14 @@ void DrvUSART_SendChar(u8 u8Char)
 	UDR0 = u8Char;
 }
 
-void DrvUSART_SendStr(char *str)
-{
+void DrvUSART_SendStr(char *str) {
 	char *pt = str;
 	while(*pt)
 	{
 		DrvUSART_SendChar(*pt++);
 	}
+	_delay_ms(100); //IMPORTANT (cambiar por interrupcion TXC)
+	strcpy(lastCommand, str);
 }
 
 u8 DrvUSART_GetChar(void)
@@ -93,17 +79,18 @@ u8 DrvUSART_GetChar(void)
 	return UDR0;
 }
 
-// GET STRING WORKS!!! (reads buffer filled on RXC interrupt) //
-// process to do something with "caracter"
+// reads buffer filled on RXC interrupt
 void DrvUSART_GetString(void) {
+	asm("cli");
 	char caracter;
 	clear();
 	while (rxReadPos != rxWritePos) { // until it reaches write pos
 		caracter = rxBuffer[rxReadPos];
-		if (caracter == '\0') {
+		
+		if (caracter == '\0') { //nunca, el puerto UART no manda NULL
 			break;
 		}
-		else if (caracter == '\n') {
+		if (caracter == '\n') {
 			lcdSendStr(" "); //lf
 		}
 		else if (caracter == '\r') {
@@ -115,7 +102,90 @@ void DrvUSART_GetString(void) {
 		//if rxReadPos reaches 127 it returns to 0
 		rxReadPos = (rxReadPos + 1) % BUFFER_SIZE;
 	}
+	asm("sei");
 }
+
+//For storing everything except echoed command in another circular buffer
+//Note that it will store null if it finds LF or CR...
+/*
+void processData(char *buff) {
+	clear();
+	char *lastCommandPtr = strstr(rxBuffer, lastCommand);
+	lastCommandPtr += strlen(lastCommand)+2; //moves pointer to after echoed command
+	//lcdSendStr(lastCommandPtr); //for debugging
+	//_delay_ms(2000);
+	rxReadPos = lastCommandPtr - rxBuffer; //gives you index where the pointer points
+	//char str[4];
+	//sprintf(str, "%d", rxReadPos);
+	//lcdSendStr(str); //for debugging
+	//_delay_ms(2000);
+	while (rxReadPos != rxWritePos) {
+		if (rxBuffer[rxReadPos] == '\n') {
+			//lcdSendStr("lf"); //lf
+		}
+		else if (rxBuffer[rxReadPos] == '\r') {
+			//lcdSendStr("cr");
+		}
+		else {
+			//buff is another circular buffer, maybe change to normal array (i=0)
+			buff[rxReadPos] = rxBuffer[rxReadPos]; //store response
+			lcdSendChar(buff[rxReadPos]);
+		}
+		rxReadPos = (rxReadPos + 1) % BUFFER_SIZE;
+	}
+}
+*/
+/* MAKES MORE SENSE: storing in linear buffer i=0 */
+void processData(char *buff, size_t buffsize) {
+	asm("cli");
+	memset(buff, 0, buffsize); // clear buff
+	clear();
+	int i = 0;
+	char *lastCommandPtr = strstr(rxBuffer, lastCommand);
+	lastCommandPtr += strlen(lastCommand)+2; //moves pointer to after echoed command
+	rxReadPos = lastCommandPtr - rxBuffer; //gives you index where the pointer points
+	while (rxReadPos != rxWritePos) {
+		if (rxBuffer[rxReadPos] == '\n') {
+			//lcdSendStr("lf"); //lf
+			//buff[i] = rxBuffer[rxReadPos];
+		}
+		else if (rxBuffer[rxReadPos] == '\r') {
+			//lcdSendStr("cr");
+			//buff[i] = rxBuffer[rxReadPos];
+		}
+		else {
+			buff[i] = rxBuffer[rxReadPos]; //store response
+			//lcdSendChar(buff[i]);
+			i++;
+		}
+		rxReadPos = (rxReadPos + 1) % BUFFER_SIZE;
+	}
+	buff[i] = '\0'; //null terminate
+	asm("sei");
+}
+
+//EXAMPLE:
+/*
+#include <stdio.h>
+#include <string.h>
+int main() {
+	char *lastCommand = "AT";
+	
+	char *rxBuffer = "ATOK";
+	//char *ptr = &arr[1]; // Pointer points to the third element of the array
+	char *lastCommandPtr = strstr(rxBuffer, lastCommand);
+
+	// Calculate the index
+	
+	lastCommandPtr += strlen(lastCommand);
+	int index = lastCommandPtr - rxBuffer;
+	
+	printf("%d", index);
+	printf("%s", lastCommandPtr);
+
+	return 0;
+}
+*/
 
 // FOR TXC INTERRUPT (NOT NECESSARY RN)
 /*

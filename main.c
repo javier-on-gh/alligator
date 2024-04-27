@@ -44,7 +44,6 @@ extern void init_modules(void);
 char *MESSAGE;
 char INBUFF[0x60] = {0};
 char TEMP[0x78] = {0};
-char COORDS[0x60] = {0};
 
 int cntTM, cntTE;
 ISR(WDT_vect)
@@ -52,7 +51,7 @@ ISR(WDT_vect)
 	WDTCSR |= (1<<WDIF); // Borra bandera
 	cntTE++;
 	cntTM++;
-	if (cntTM==6)//(cntTM==113) // Muestrea sensores cada hora
+	if (cntTM==10)//(cntTM==113) // Muestrea sensores cada hora
 	{
 		cntTM = 0;
 		estado = muestreo;
@@ -69,19 +68,19 @@ ISR(WDT_vect)
 
 int main(void)
 {	
+	DrvSYS_Init();
+	DrvUSART_Init();
+	DrvTWI_Init();
+	lcd_inicio();
+	
 	cntTM = 0;
 	cntTE = 0;
-	estado = dormido;
+	estado = movimiento;
 	
 	u8 u8Reg;
 	u8Reg = PMCR | (WDT_WCLKS << 4);
 	PMCR = 0x80;
 	PMCR = u8Reg;
-	
-	DrvSYS_Init();
-	DrvUSART_Init();
-	DrvTWI_Init();
-	lcd_inicio();
 
 	asm("cli"); //__disable_interrupt();
 	asm("wdr");//__watchdog_reset();
@@ -106,26 +105,5 @@ int main(void)
 	while (1)
 	{
 		computeStateMachine();
-		//char c = getChar();
-		//
-		//asm("cli");
-		//clear();
-		//if(c == 0){
-			//lcdSendStr("0");
-		//}
-		//if(c == '\r'){
-			//lcdSendStr("cr");
-		//}
-		//if(c == '\n'){
-			//lcdSendStr("lf");
-		//}
-		//else{
-			////char str[20];
-			////sprintf(str, "%d", c);
-			////lcdSendStr(str);
-			//lcdSendChar(c);
-		//}
-		//_delay_ms(1000);
-		//asm("sei");
 	}
 }
