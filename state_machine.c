@@ -40,6 +40,7 @@ void computeStateMachine(void) {
 			clear();
 			lcdSendStr("dormido");
 			asm("sei");
+			
 			//if acelerometro se mueve: estado = movimiento
 			PORTB = 0x01;
 			break;
@@ -48,14 +49,13 @@ void computeStateMachine(void) {
 			asm("cli");
 			clear();
 			lcdSendStr("muestreo");
+			//_delay_ms(3000);
 			asm("sei");
 			
 			//sendATCommands("AT\r");
 			//iluminacion();
 			//temperatura();
-			
 			GPS();
-			//_delay_ms(3000);
 			
 			PORTB = 0x02;
 			estado = dormido;
@@ -73,7 +73,6 @@ void computeStateMachine(void) {
 		
 		case movimiento: // FOR DEBUGGING RIGHT NOW //
 			//sendATCommands("AT\r");
-			
 			//DrvUSART_SendStr("AT\r");
 			//processData(COORDS, sizeof(COORDS));
 			//print_Buffer(COORDS, sizeof(COORDS));
@@ -129,7 +128,7 @@ void GPS() {
 	// Turn on GPS
 	DrvUSART_SendStr("AT+QGPS=1\r");
 	DrvUSART_GetString();
-	_delay_ms(4000); //give it some time
+	_delay_ms(2000); //give it some time
 
 	// TRY to Get GPS location
 	TRYING("AT+QGPSLOC?\r");
@@ -138,19 +137,28 @@ void GPS() {
 void TRYING(char *command){
 	int retries = 0;
 	int wait_time = 3000;
-	while (retries < 3) {
+	while (retries < 3) { //try 3 times
 		DrvUSART_SendStr(command);
 		processData(COORDS, sizeof(COORDS));
+		asm("cli");
+		clear();
+		lcdSendStr("Trying GPS...");
+		char str[4];
+		sprintf(str, "%d", retries);
+		lcdSendStr(str);
+		asm("sei");
+		
 		//if ERROR 505: GNSS is OFF
 		//if ERROR 516: loc not fixed, wait a little try again then break
 		//if OK continue, if ERROR 505: GNSS is already OFF
 		if (strstr(COORDS, "OK") != NULL) { //debug: try "OK\0"
 			print_Buffer(COORDS, sizeof(COORDS)/sizeof(COORDS[0])); //show coords (do something with the buffer)
-			_delay_ms(5000);
+			_delay_ms(2000);
 			
 			DrvUSART_SendStr("AT+QGPSEND\r"); // turn GPS off
 			DrvUSART_GetString();
-			_delay_ms(2000);
+			_delay_ms(1000);
+			retries = 0;
 			break; //done
 		}
 		else if (strstr(COORDS, "ERROR: 505") != NULL) { //if GPS is OFF
@@ -159,13 +167,16 @@ void TRYING(char *command){
 			_delay_ms(1000);
 			retries = 0;
 		}
-		// Location not fixed, wait and try again
-		asm("cli");
-		clear();
-		lcdSendStr("Trying GPS...");
-		asm("sei");
+		// Location not fixed, wait and try again	
 		retries ++;
 		_delay_ms(wait_time);
+	}
+	if(retries == 3){
+		asm("cli");
+		clear();
+		lcdSendStr("No GPS fix!");
+		_delay_ms(1000);
+		asm("sei");
 	}
 }
 
@@ -173,7 +184,7 @@ void print_Buffer(char *buff, size_t buffersize){
 	asm("cli");
 	clear();
 	for (int i = 0; i < buffersize; i++){
-		if (i%16 == 0 && COORDS[i] != '\0'){ //every 16 chars in LCD
+		if (i%15 == 0 && COORDS[i] != '\0'){ //every 16 chars in LCD
 			clear();
 		}
 		if(COORDS[i] == '\0'){
@@ -190,7 +201,7 @@ void print_Buffer(char *buff, size_t buffersize){
 		}
 		else{
 			lcdSendChar(COORDS[i]);
-			_delay_ms(150);
+			_delay_ms(100);
 		}
 	}
 	asm("sei");

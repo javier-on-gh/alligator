@@ -7,15 +7,11 @@
 // *** CONTROL DE UN MODULO LCD DE CARACTERES DE 16 PINES
 // *** CONVERTIDA A IIC A TRAVES DEL C.I. PCF8574
 
-
-
 #include "lcdi2c.h"
 #include <inttypes.h>
 #include "allinone.h"
 #include <util/delay.h>
 #include <string.h>
-
-
 
 /********** high level commands, for the user! */
 void clear(){
@@ -109,14 +105,11 @@ void backlight(void) {
 	expanderWrite(0);
 }
 
-
-
 /*********** mid level commands, for sending data/cmds */
 
 inline void command(uint8_t value) {
 	send(value, 0);
 }
-
 
 /************ low level data pushing commands **********/
 
@@ -155,9 +148,7 @@ void pulseEnable(uint8_t _data){
 	_delay_us(50);		// commands need > 37us to settle
 }
 
-
 // Alias functions
-
 void cursor_on(){
 	cursor();
 }
@@ -174,7 +165,6 @@ void blink_off(){
 	noBlink();
 }
 
-
 void setBacklight(uint8_t new_val){
 	if(new_val){
 		backlight();		// turn backlight on
@@ -182,8 +172,6 @@ void setBacklight(uint8_t new_val){
 		noBacklight();		// turn backlight off
 	}
 }
-
-
 
 void lcdSendStr(char *str)
 {
@@ -200,8 +188,6 @@ void lcdSendChar(char u8Char)
 	send(u8Char, 1);
 	
 }
-
-
 
 /* * * * * * * * * * * * * * * *
    ** Inicializacion de 4 bits *
@@ -228,3 +214,30 @@ void lcd_inicio(){
 	send(0x40, 0);	// i/d , sh 
 	_delay_ms(2);	
 }
+/*
+void lcd_inicio() {
+	_rows = 2;  // Set number of rows to 2
+	_cols = 16; // Set number of columns to 16
+	_displayfunction = LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS; // Update display function
+	// Rest of the initialization code remains the same
+	// Ensure that proper delays are maintained throughout the initialization process
+	_delay_ms(50);
+	send(0x30, 0);	//Function set
+	_delay_us(40);
+	send(0x20, 0);	//Function set
+	send(0x80, 0);	//LINEAS 2, FUENTE 5X8 PUNTOS
+	_delay_us(40);
+	send(0x20, 0);	//Function set
+	send(0x80, 0);	//LINEAS = 2, FUENTE = 5X8 PUNTOS
+	_delay_us(40);
+	send(0x00, 0);	//Display ON/OFF control
+	send(0xf0, 0);	// set display, cursor, blinking
+	_delay_us(40);
+	send(0x00, 0);	//Display clear
+	send(0x10, 0);
+	_delay_ms(2);
+	send(0x00, 0);	//Entry mode set
+	send(0x40, 0);	// i/d , sh
+	_delay_ms(2);
+}
+*/

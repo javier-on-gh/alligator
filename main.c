@@ -51,7 +51,7 @@ ISR(WDT_vect)
 	WDTCSR |= (1<<WDIF); // Borra bandera
 	cntTE++;
 	cntTM++;
-	if (cntTM==10)//(cntTM==113) // Muestrea sensores cada hora
+	if (cntTM==12)//(cntTM==113) // Muestrea sensores cada hora
 	{
 		cntTM = 0;
 		estado = muestreo;
@@ -104,6 +104,7 @@ int main(void)
 	//serialWrite("AT+QGPS=1\r\n");
 	while (1)
 	{
+		//lcdSendStr("!23456789qwerty*!mnbvcxzlkjhgfd*");
 		computeStateMachine();
 	}
 }
