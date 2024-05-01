@@ -20,8 +20,8 @@
 #define F_CPU 9216000UL
 #endif
 
+#include "allinone.h"
 #include <avr/interrupt.h>
-#include <avr/io.h>
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 #include <util/delay.h>
@@ -30,20 +30,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stddef.h>
-#include "allinone.h"
-#include "oled.h"
-#include "lcdi2c.h"
-
-#include "DrvUSART.h"
-#include "DrvSYS.h"
-#include "DrvWDT.h"
-#include "state_machine.h"
 
 extern void init_modules(void);
 
 char *MESSAGE;
-char INBUFF[0x60] = {0};
-char TEMP[0x78] = {0};
 
 int cntTM, cntTE;
 ISR(WDT_vect)
@@ -51,7 +41,7 @@ ISR(WDT_vect)
 	WDTCSR |= (1<<WDIF); // Borra bandera
 	cntTE++;
 	cntTM++;
-	if (cntTM==12)//(cntTM==113) // Muestrea sensores cada hora
+	if (cntTM==10)//(cntTM==113) // Muestrea sensores cada hora
 	{
 		cntTM = 0;
 		estado = muestreo;
@@ -100,11 +90,9 @@ int main(void)
 	clear();
 	lcdSendStr("BALATRON");
 	asm("sei");
-	
-	//serialWrite("AT+QGPS=1\r\n");
+	//DrvUSART_SendStr("ATE0"); //Quitar el echo
 	while (1)
 	{
-		//lcdSendStr("!23456789qwerty*!mnbvcxzlkjhgfd*");
 		computeStateMachine();
 	}
 }

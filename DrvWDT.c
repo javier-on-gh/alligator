@@ -24,7 +24,6 @@ Description : Original version.
 ***  MODULES USED								***
 **********************************************************************************/ 
 #include "allinone.h"
-#include "DrvWDT.h"
 
 #if ((WDT_MODE == 0x1) || (WDT_MODE == 0x3)) && (WDT_IEN == 0)
 #warning <E0:Watch Dog Timer> Interrupt must be enabled for selected mode

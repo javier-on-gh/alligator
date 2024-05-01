@@ -7,7 +7,6 @@
 // *** CONTROL DE UN MODULO LCD DE CARACTERES DE 16 PINES
 // *** CONVERTIDA A IIC A TRAVES DEL C.I. PCF8574
 
-#include "lcdi2c.h"
 #include <inttypes.h>
 #include "allinone.h"
 #include <util/delay.h>
@@ -26,8 +25,11 @@ void home(){
 
 void setCursor(uint8_t col, uint8_t row){
 	int row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
-	if ( row > _numlines ) {
-		row = _numlines-1;    // we count rows starting w/0
+	if ( row > 1 ) {
+		row = 1-1;    // we count rows starting w/0
+	}
+	if ( col > 15 ) {
+		col = 0;    // we count rows starting w/0
 	}
 	command(LCD_SETDDRAMADDR | (col + row_offsets[row]));
 }
@@ -187,6 +189,27 @@ void lcdSendChar(char u8Char)
 {
 	send(u8Char, 1);
 	
+}
+
+//prints from 0,0 and overwrites rows if col==16
+void lcdSendLargeStr(char *str) {
+	char *pt = str;
+	uint8_t col = 0;
+	uint8_t row = 0;
+	setCursor(0, 0);
+	while (*pt) {
+		if (col == 16) {
+			col = 0; // Reset column to start of next line
+			row++;   // Move to the next row
+			if (row == 2) {
+				row = 0; // Loop back to the first row after the second row
+			}
+			setCursor(col, row); // Set cursor to the new position
+		}
+		lcdSendChar(*pt++); // Send the character to the LCD
+		col++; // Move to the next column
+		// Optionally, you can add a delay here if needed
+	}
 }
 
 /* * * * * * * * * * * * * * * *

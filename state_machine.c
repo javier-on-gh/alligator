@@ -15,20 +15,14 @@
 #include <stdio.h>
 #include <stddef.h>
 #include "allinone.h"
-#include "lcdi2c.h"
-#include "DrvUSART.h"
-#include "DrvSYS.h"
-#include "state_machine.h"
 
 enum state estado = dormido; //start state
 
 extern char *MESSAGE;
-extern char INBUFF[0x60];
-extern char TEMP[0x78];
-
+char TEMP[128] = {0};
 char COORDS[128] = {0};
-extern char rxBuffer[128];
-
+	
+int toggle = 0; //puede servir como bandera toggle 0 o 1
 bool commandOK = false;
 bool commandERROR = false; //flags to check if command was succesful or not
 
@@ -49,7 +43,7 @@ void computeStateMachine(void) {
 			asm("cli");
 			clear();
 			lcdSendStr("muestreo");
-			//_delay_ms(3000);
+			//_delay_ms(1000);
 			asm("sei");
 			
 			//sendATCommands("AT\r");
@@ -65,7 +59,14 @@ void computeStateMachine(void) {
 			asm("cli");
 			clear();
 			lcdSendStr("enviando");
+			//_delay_ms(1000);
 			asm("sei");
+			
+			//obtener hora
+			DrvUSART_SendStr("AT+QLTS=2\r"); // Pedir hora actual
+			processData(TEMP, sizeof(TEMP));
+			print_Buffer(TEMP, sizeof(TEMP));
+			_delay_ms(2000);
 			
 			//PORTB = 0x04; //debug ahora suena el buzzer
 			estado = dormido;
@@ -77,6 +78,14 @@ void computeStateMachine(void) {
 			//processData(COORDS, sizeof(COORDS));
 			//print_Buffer(COORDS, sizeof(COORDS));
 			//_delay_ms(5000);
+			
+			//asm("cli");
+			//lcdSendLargeStr("!23456789qwerty*!mnbvcxzlkjhgfd*");
+			//_delay_ms(5000);
+			//asm("sei");
+			
+			TRY_COMMAND("AT\r", TEMP, sizeof(TEMP));
+			RETRY_COMMAND(1, "AT+QGPSLOC?\r", TEMP, sizeof(TEMP));
 			
 			PORTB = 0x08;
 			estado = dormido;
@@ -129,12 +138,17 @@ void GPS() {
 	DrvUSART_SendStr("AT+QGPS=1\r");
 	DrvUSART_GetString();
 	_delay_ms(2000); //give it some time
-
-	// TRY to Get GPS location
-	TRYING("AT+QGPSLOC?\r");
+	//if OK or ERROR: 504 try GPSLOC:
+	//TRYING_GPS("AT+QGPSLOC?\r"); // TRY to Get GPS location
+	TRY_COMMAND("AT+QGPSLOC?\r", COORDS, sizeof(COORDS));
+	if (strstr(COORDS, "OK") != NULL) {		
+		DrvUSART_SendStr("AT+QGPSEND\r"); // turn GPS off
+		DrvUSART_GetString();
+		_delay_ms(1000);
+	}
 }
-/* For trying a command multiple times for a determined time */
-void TRYING(char *command){
+
+void TRYING_GPS(char *command){
 	int retries = 0;
 	int wait_time = 3000;
 	while (retries < 3) { //try 3 times
@@ -146,6 +160,7 @@ void TRYING(char *command){
 		char str[4];
 		sprintf(str, "%d", retries);
 		lcdSendStr(str);
+		//setCursor(0, toggleValue());
 		asm("sei");
 		
 		//if ERROR 505: GNSS is OFF
@@ -162,10 +177,18 @@ void TRYING(char *command){
 			break; //done
 		}
 		else if (strstr(COORDS, "ERROR: 505") != NULL) { //if GPS is OFF
-			DrvUSART_SendStr("AT+QGPS=1\r");
+			DrvUSART_SendStr("AT+QGPS=1\r"); //turn it on
 			DrvUSART_GetString();
 			_delay_ms(1000);
-			retries = 0;
+			retries = 0; //try again 3 times
+		}
+		else if (strstr(COORDS, "ERROR: 516") != NULL) {
+			//print_Buffer(COORDS, sizeof(COORDS));
+			//_delay_ms(2000);
+			asm("cli");
+			setCursor(0, 1);
+			lcdSendStr("No fix yet");
+			asm("sei");
 		}
 		// Location not fixed, wait and try again	
 		retries ++;
@@ -180,39 +203,112 @@ void TRYING(char *command){
 	}
 }
 
+/* Generalized, Works perfect for trying a command multiple times for a determined time */
+void TRY_COMMAND(char *command, char *buffer, size_t buffersize){
+	int retries = 0;
+	int wait_time = 3000; //in ms
+	while (retries < 3) { //try 3 times
+		DrvUSART_SendStr(command); //manda comando
+		processData(buffer, buffersize); // guarda respuesta en buffer
+		asm("cli");
+		clear();
+		lcdSendStr("Trying...");
+		char str[2];
+		sprintf(str, "%d", retries);
+		lcdSendStr(str);
+		//setCursor(0, toggleValue());
+		asm("sei");
+		
+		if (strstr(buffer, "OK") != NULL) { //si encuentar ok en buffer
+			print_Buffer(buffer, buffersize); //imprime respuesta
+			_delay_ms(2000);
+			retries = 0;
+			break; //done
+		}
+		//debug: agregar manejo de codigos de errores.
+		else if (strstr(buffer, "ERROR") != NULL) { // si encuentra error en buffer
+			print_Buffer(buffer, buffersize); //imprime el error y try again (debug: con errores especificos)
+		}
+		retries ++;
+		_delay_ms(wait_time);
+	}
+	if(retries == 3){
+		asm("cli");
+		clear();
+		lcdSendStr("No Good");
+		_delay_ms(1000);
+		asm("sei");
+	}
+}
+//Different solution with recursion, works fine
+void RETRY_COMMAND(int attempt, char *command, char *buffer, size_t buffersize){
+	int max_retries = 3;
+	int wait_time = 3000; //in ms
+	DrvUSART_SendStr(command); //manda comando
+	processData(buffer, buffersize); // guarda respuesta en buffer
+	if (strstr(buffer, "OK") != NULL) { //si encuentar ok en buffer
+		print_Buffer(buffer, buffersize); //imprime respuesta
+		_delay_ms(2000);
+		//attempt = 0;
+		return; //done
+	}
+	else if (strstr(buffer, "ERROR") != NULL) { // si encuentra error en buffer
+		print_Buffer(buffer, buffersize); //imprime el error y try again (debug: con errores especificos)
+	}
+	_delay_ms(wait_time);	
+	if (attempt <= max_retries) {
+		RETRY_COMMAND(attempt + 1, command, buffer, buffersize);
+	}
+	else {
+		asm("cli");
+		lcdSendStr("Failed!");
+		_delay_ms(2000);
+		asm("sei");
+	}
+}
+
+//WORKS PERFECT
 void print_Buffer(char *buff, size_t buffersize){
+	uint8_t col = 0;
+	uint8_t row = 0;
 	asm("cli");
 	clear();
 	for (int i = 0; i < buffersize; i++){
-		if (i%15 == 0 && COORDS[i] != '\0'){ //every 16 chars in LCD
-			clear();
+		if (col == 16) {
+			col = 0;
+			row = (row + 1) % 2; // toggle between line 0 and 1
+			setCursor(0, row);
+			//setCursor(0, toggleValue()); // Set cursor to the toggled row
 		}
-		if(COORDS[i] == '\0'){
+		if(buff[i] == '\0'){
 			//lcdSendStr("*");
 			//_delay_ms(100);
 		}
-		else if(COORDS[i] == '\r'){
+		else if(buff[i] == '\r'){
 			lcdSendStr("+");
-			//_delay_ms(100);
-		}
-		else if(COORDS[i] == '\n'){
-			lcdSendStr("-");
-			//_delay_ms(100);
-		}
-		else{
-			lcdSendChar(COORDS[i]);
 			_delay_ms(100);
 		}
+		else if(buff[i] == '\n'){
+			lcdSendStr("-");
+			_delay_ms(100);
+		}
+		else{
+			lcdSendChar(buff[i]);
+			_delay_ms(150);
+			col++; // Move to the next column
+		}
 	}
+	lcdSendChar(' '); //For viewing the end easily
 	asm("sei");
 }
 
-//clear buff:
-/*
+int toggleValue(void){ //Puede servir como bandera de toggle 0 o 1
+	return toggle ^= 1;
+}
+
 void clear_Buffer(char *buffer, size_t buffersize){
 	memset(buffer, 0, buffersize); //fill with int 0 (equivalent to char null)
 	//for (int j = 0; j < buffersize; j++) {
 	//buffer[j] = '\0';
 	//}
 }
-*/

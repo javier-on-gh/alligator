@@ -90,11 +90,11 @@ void DrvUSART_GetString(void) {
 		if (caracter == '\0') { //nunca, el puerto UART no manda NULL
 			break;
 		}
-		if (caracter == '\n') {
-			lcdSendStr(" "); //lf
-		}
-		else if (caracter == '\r') {
+		if (caracter == '\r') {
 			//lcdSendStr("cr");
+		}
+		else if (caracter == '\n') {
+			lcdSendStr(" "); //lf
 		}
 		else {
 			lcdSendChar(caracter);
@@ -105,45 +105,18 @@ void DrvUSART_GetString(void) {
 	asm("sei");
 }
 
-//For storing everything except echoed command in another circular buffer
-//Note that it will store null if it finds LF or CR...
-/*
-void processData(char *buff) {
-	clear();
-	char *lastCommandPtr = strstr(rxBuffer, lastCommand);
-	lastCommandPtr += strlen(lastCommand)+2; //moves pointer to after echoed command
-	//lcdSendStr(lastCommandPtr); //for debugging
-	//_delay_ms(2000);
-	rxReadPos = lastCommandPtr - rxBuffer; //gives you index where the pointer points
-	//char str[4];
-	//sprintf(str, "%d", rxReadPos);
-	//lcdSendStr(str); //for debugging
-	//_delay_ms(2000);
-	while (rxReadPos != rxWritePos) {
-		if (rxBuffer[rxReadPos] == '\n') {
-			//lcdSendStr("lf"); //lf
-		}
-		else if (rxBuffer[rxReadPos] == '\r') {
-			//lcdSendStr("cr");
-		}
-		else {
-			//buff is another circular buffer, maybe change to normal array (i=0)
-			buff[rxReadPos] = rxBuffer[rxReadPos]; //store response
-			lcdSendChar(buff[rxReadPos]);
-		}
-		rxReadPos = (rxReadPos + 1) % BUFFER_SIZE;
-	}
-}
-*/
-/* MAKES MORE SENSE: storing in linear buffer i=0 */
+/* For storing everything except echoed command in linear buffer */
+/* WORKS PERFECT WITH AND WITHOUT ECHO */
 void processData(char *buff, size_t buffsize) {
 	asm("cli");
 	memset(buff, 0, buffsize); // clear buff
 	clear();
 	int i = 0;
-	char *lastCommandPtr = strstr(rxBuffer, lastCommand);
-	lastCommandPtr += strlen(lastCommand)+2; //moves pointer to after echoed command
-	rxReadPos = lastCommandPtr - rxBuffer; //gives you index where the pointer points
+	char *lastCommandPtr = &rxBuffer[rxReadPos]; //points to first character of received response each time.
+	if(strncmp(lastCommandPtr, lastCommand, strlen(lastCommand)) == 0){ //compares pointer to lastcommand
+		lastCommandPtr += strlen(lastCommand)+2; //moves pointer to after echoed command+\r\n
+		rxReadPos = lastCommandPtr - rxBuffer; //gives you index where the pointer points
+	}
 	while (rxReadPos != rxWritePos) {
 		if (rxBuffer[rxReadPos] == '\n') {
 			//lcdSendStr("lf"); //lf
@@ -156,6 +129,7 @@ void processData(char *buff, size_t buffsize) {
 		else {
 			buff[i] = rxBuffer[rxReadPos]; //store response
 			//lcdSendChar(buff[i]);
+			//_delay_ms(1000);
 			i++;
 		}
 		rxReadPos = (rxReadPos + 1) % BUFFER_SIZE;
@@ -163,29 +137,6 @@ void processData(char *buff, size_t buffsize) {
 	buff[i] = '\0'; //null terminate
 	asm("sei");
 }
-
-//EXAMPLE:
-/*
-#include <stdio.h>
-#include <string.h>
-int main() {
-	char *lastCommand = "AT";
-	
-	char *rxBuffer = "ATOK";
-	//char *ptr = &arr[1]; // Pointer points to the third element of the array
-	char *lastCommandPtr = strstr(rxBuffer, lastCommand);
-
-	// Calculate the index
-	
-	lastCommandPtr += strlen(lastCommand);
-	int index = lastCommandPtr - rxBuffer;
-	
-	printf("%d", index);
-	printf("%s", lastCommandPtr);
-
-	return 0;
-}
-*/
 
 // FOR TXC INTERRUPT (NOT NECESSARY RN)
 /*

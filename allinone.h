@@ -9,24 +9,17 @@
 #define F_CPU 9216000UL
 #endif
 
-
-///Autogen start
 #include <avr/io.h>
 #include "global.h"
+#include "macros_auto.h"
 #include "lgt8f328p_spec.h"
 #include "lgt8f328p_gcc.h"
-#include "macros_auto.h"
-//#include "DrvEXINT.h"
-//#include "DrvGPIO.h"
-//#include "FSYSCLK.h"
-#include "DrvUSART.h"
-//#include "DrvTC0.h"
-//#include "DrvMISC.h"
-//#include "DrvSYS.h"
+#include "DrvSYS.h"
 #include "DrvADC.h"
+#include "DrvUSART.h"
 #include "DrvTWI.h"
-//#include "DrvPWR.h"
-///Autogen end
-
+#include "DrvWDT.h"
+#include "lcdi2c.h"
+#include "state_machine.h"
 
 #endif // __ALLIONONE_H__

@@ -17,9 +17,12 @@ void iluminacion(void);
 void temperatura(void);
 void GPS(void);
 
-void clear_Buffer(char *);
+void clear_Buffer(char *, size_t);
 void print_Buffer(char *, size_t);
 
-void TRYING(char *);
+void TRYING_GPS(char *);
+void TRY_COMMAND(char *, char *, size_t);
+void RETRY_COMMAND(int, char *, char *, size_t);
+int toggleValue(void);
 
 #endif /* STATE_MACHINE_H_ */

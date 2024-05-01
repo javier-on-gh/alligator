@@ -65,6 +65,7 @@
 //	public:
 	void lcd_inicio(void);
 	void lcdSendStr(char *str);
+	void lcdSendLargeStr(char *str);
 	void lcdSendChar(char u8Char);
 	
 	
