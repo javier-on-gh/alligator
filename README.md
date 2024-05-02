@@ -15,46 +15,7 @@ IOT cellular beacon implementation using BG95 and LGT8F328P
 ## Implementation
 State machine control
 
-<?xml version="1.0" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "https://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-
-<svg width="800" height="600" version="1.1" xmlns="http://www.w3.org/2000/svg">
-	<ellipse stroke="black" stroke-width="1" fill="none" cx="217.5" cy="77.5" rx="30" ry="30"/>
-	<text x="202.5" y="83.5" font-family="Times New Roman" font-size="20">idle</text>
-	<ellipse stroke="black" stroke-width="1" fill="none" cx="518.5" cy="280.5" rx="30" ry="30"/>
-	<text x="482.5" y="286.5" font-family="Times New Roman" font-size="20">read data</text>
-	<ellipse stroke="black" stroke-width="1" fill="none" cx="495.5" cy="502.5" rx="30" ry="30"/>
-	<text x="458.5" y="508.5" font-family="Times New Roman" font-size="20">send data</text>
-	<ellipse stroke="black" stroke-width="1" fill="none" cx="659.5" cy="77.5" rx="30" ry="30"/>
-	<text x="648.5" y="83.5" font-family="Times New Roman" font-size="20">rtc</text>
-	<ellipse stroke="black" stroke-width="1" fill="none" cx="83.5" cy="301.5" rx="30" ry="30"/>
-	<text x="41.5" y="307.5" font-family="Times New Roman" font-size="20">movement</text>
-	<polygon stroke="black" stroke-width="1" points="493.628,263.726 242.372,94.274"/>
-	<polygon fill="black" stroke-width="1" points="242.372,94.274 246.209,102.893 251.8,94.602"/>
-	<text x="315.5" y="199.5" font-family="Times New Roman" font-size="20">hecho</text>
-	<path stroke="black" stroke-width="1" fill="none" d="M 247.157,72.98 A 1368.327,1368.327 0 0 1 629.843,72.98"/>
-	<polygon fill="black" stroke-width="1" points="629.843,72.98 622.621,66.91 621.223,76.812"/>
-	<text x="414.5" y="50.5" font-family="Times New Roman" font-size="20">Timer</text>
-	<path stroke="black" stroke-width="1" fill="none" d="M 630.475,85.078 A 817.544,817.544 0 0 1 246.525,85.078"/>
-	<polygon fill="black" stroke-width="1" points="246.525,85.078 253.128,91.817 255.476,82.096"/>
-	<text x="389.5" y="128.5" font-family="Times New Roman" font-size="20">no overflow</text>
-	<polygon stroke="black" stroke-width="1" points="642.386,102.14 535.614,255.86"/>
-	<polygon fill="black" stroke-width="1" points="535.614,255.86 544.285,252.142 536.071,246.438"/>
-	<text x="594.5" y="198.5" font-family="Times New Roman" font-size="20">muestreo</text>
-	<path stroke="black" stroke-width="1" fill="none" d="M 469.72,487.165 A 547.427,547.427 0 0 1 221.22,107.265"/>
-	<polygon fill="black" stroke-width="1" points="221.22,107.265 217.486,115.929 227.372,114.417"/>
-	<text x="250.5" y="343.5" font-family="Times New Roman" font-size="20">hecho</text>
-	<path stroke="black" stroke-width="1" fill="none" d="M 675.802,102.666 A 270.951,270.951 0 0 1 524.481,494.808"/>
-	<polygon fill="black" stroke-width="1" points="524.481,494.808 533.636,497.086 530.54,487.577"/>
-	<text x="700.5" y="349.5" font-family="Times New Roman" font-size="20">envio</text>
-	<path stroke="black" stroke-width="1" fill="none" d="M 211.361,106.856 A 356.263,356.263 0 0 1 106.463,282.208"/>
-	<polygon fill="black" stroke-width="1" points="211.361,106.856 204.549,113.382 214.242,115.839"/>
-	<text x="178.5" y="220.5" font-family="Times New Roman" font-size="20">hecho</text>
-	<path stroke="black" stroke-width="1" fill="none" d="M 85.47,271.582 A 257.456,257.456 0 0 1 192.07,93.384"/>
-	<polygon fill="black" stroke-width="1" points="85.47,271.582 91.421,264.262 81.498,263.025"/>
-	<text x="78.5" y="164.5" font-family="Times New Roman" font-size="20">mov</text>
-</svg>
-
+![state_machine] (finatestatemachine.png)
 
 ## Public Methods
 
