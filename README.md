@@ -15,7 +15,7 @@ IOT cellular beacon implementation using BG95 and LGT8F328P
 ## Implementation
 State machine control
 
-![state_machine] (finatestatemachine.png)
+![state_machine](finatestatemachine.png)
 
 ## Public Methods
 
