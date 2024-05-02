@@ -1,7 +1,8 @@
-# esp32-BG95
+
+# BeaconCell
 
 ## Description
-package to communicate with BG95 modem
+IOT cellular beacon implementation using BG95 and LGT8F328P
 
 ## Functionalities
 
@@ -47,50 +48,50 @@ Library to interact with BG95 enabling functionalities listed above
 
 ## State Machine
 
-#### void computeStateMachine(void)
+#### computeStateMachine
 - call it to initialize state machine
 ```
 blablabla
 ```
-#### void sendATCommands(char *)
+#### sendATCommands
 * blabla
-#### void iluminacion(void)
+#### iluminacion
 * blabla
-#### void temperatura(void)
+#### temperatura
 * blabla
-#### void GPS(void)
+#### GPS(void)
 * blabla
-#### void clear_Buffer(char *, size_t)
+#### clear_Buffer
 * blabla
-#### void print_Buffer(char *, size_t
+#### print_Buffer
 * blabla
-#### void TRYING_GPS(char *)
+#### TRYING_GPS
 * blabla
-#### void TRY_COMMAND(char *, char *, size_t)
+#### TRY_COMMAND
 * blabla
-#### void RETRY_COMMAND(int, char *, char *, size_t)
+#### RETRY_COMMAND
 * blabla
-#### int toggleValue(void)
+#### toggleValue
 * blabla
 
 ## DrvUSART.c
 
-#### void DrvUSART_Init(void)
+#### DrvUSART_Init(void)
 * blabla
 ```
 blablabla
 ```
-#### void DrvUSART_SendChar(u8 u8Char)
+#### DrvUSART_SendChar
 * blabla
-#### void DrvUSART_SendStr(char* str)
+#### DrvUSART_SendStr
 * blabla
-#### u8 DrvUSART_GetChar(void)
+#### DrvUSART_GetChar
 * blabla
-#### void DrvUSART_GetString(void)
+#### DrvUSART_GetString
 * blabla
-#### void processData(char *, size_t)
+#### processData
 * blabla
-#### void appendSerial(char)
+#### appendSerial
 * blabla
-#### void serialWrite(char *)
+#### serialWrite
 * blabla
