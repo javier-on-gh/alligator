@@ -20,18 +20,29 @@
 
 #define USART_TXREN ((USART_RXEN << 4) | (USART_TXEN << 3))
 
+char lastCommand[50];
+
 //////// INTERRUPTIONS ////////
 #define BUFFER_SIZE 128
 char rxBuffer[BUFFER_SIZE];
 uint8_t rxReadPos = 0;
 uint8_t rxWritePos = 0;
 
-char lastCommand[50];
-
 ISR(USART_RX_vect) {
-	rxBuffer[rxWritePos] = UDR0;	
+	rxBuffer[rxWritePos] = UDR0;
 	//if rxWritePos reaches buffer size, returns to 0
 	rxWritePos = (rxWritePos + 1) % BUFFER_SIZE;
+}
+
+char txBuffer[BUFFER_SIZE];
+uint8_t txReadPos = 0;
+uint8_t txWritePos = 0;
+
+ISR(USART_TX_vect) {
+	if(txReadPos != txWritePos) {
+		UDR0 = txBuffer[txReadPos];
+		txReadPos = (txReadPos + 1) % BUFFER_SIZE;
+	}
 }
 
 void DrvUSART_Init(void)
@@ -57,6 +68,7 @@ void DrvUSART_Init(void)
 	UBRR0L = USART_UBRR & 0xff;
 }
 
+/******* without interrupts, directly on register *******/
 void DrvUSART_SendChar(u8 u8Char)
 {
 	while(!(UCSR0A & (1 << UDRE0)));
@@ -79,6 +91,7 @@ u8 DrvUSART_GetChar(void)
 	return UDR0;
 }
 
+/******* With interrupts, using circular buffers *******/
 // reads buffer filled on RXC interrupt
 void DrvUSART_GetString(void) {
 	asm("cli");
@@ -112,11 +125,11 @@ void processData(char *buff, size_t buffsize) {
 	memset(buff, 0, buffsize); // clear buff
 	clear();
 	int i = 0;
-	char *lastCommandPtr = &rxBuffer[rxReadPos]; //points to first character of received response each time.
-	if(strncmp(lastCommandPtr, lastCommand, strlen(lastCommand)) == 0){ //compares pointer to lastcommand
-		lastCommandPtr += strlen(lastCommand)+2; //moves pointer to after echoed command+\r\n
-		rxReadPos = lastCommandPtr - rxBuffer; //gives you index where the pointer points
-	}
+	//char *lastCommandPtr = &rxBuffer[rxReadPos]; //points to first character of received response each time.
+	//if(strncmp(lastCommandPtr, lastCommand, strlen(lastCommand)) == 0){ //compares pointer to lastcommand
+		//lastCommandPtr += strlen(lastCommand)+2; //moves pointer to after echoed command+\r\n
+		//rxReadPos = lastCommandPtr - rxBuffer; //gives you index where the pointer points
+	//}
 	while (rxReadPos != rxWritePos) {
 		if (rxBuffer[rxReadPos] == '\n') {
 			//lcdSendStr("lf"); //lf
@@ -138,59 +151,18 @@ void processData(char *buff, size_t buffsize) {
 	asm("sei");
 }
 
-// FOR TXC INTERRUPT (NOT NECESSARY RN)
-/*
-//char serialBuffer[BUFFER_SIZE];
-//uint8_t serialReadPos = 0;
-//uint8_t serialWritePos = 0;
-//ISR(USART_TX_vect)
-//{
-//lcdSendStr("TXC");
-//if(serialReadPos != serialWritePos)
-//{
-//UDR0 = serialBuffer[serialReadPos];
-//serialReadPos++;
-//if(serialReadPos >= BUFFER_SIZE)
-//{
-//serialReadPos = 0;
-//}
-//}
-//}
+// FOR TXC INTERRUPT
+void appendSerial(char c)
+{
+	txBuffer[txWritePos] = c;
+	txWritePos = (txWritePos + 1) % BUFFER_SIZE;
+}
 
-//void appendSerial(char c)
-//{
-	//serialBuffer[serialWritePos] = c;
-	//serialWritePos++;
-	//if(serialWritePos >= BUFFER_SIZE)
-	//{
-		//serialWritePos = 0;
-	//}
-//}
-//
-//void serialWrite(const char *c)
-//{
-	//for(uint8_t i = 0; i < strlen(c); i++)
-	//{
-		//appendSerial(c[i]);
-	//}
-	//if(UCSR0A & (1 << UDRE0))
-	//{
-		//UDR0 = 0;
-	//}
-//}
-//
-//char getChar(void)
-//{
-	//char ret = '\0';
-	//if(rxReadPos != rxWritePos)
-	//{
-		//ret = rxBuffer[rxReadPos];
-		//rxReadPos++;
-		//if(rxReadPos >= BUFFER_SIZE)
-		//{
-			//rxReadPos = 0;
-		//}
-	//}
-	//return ret;
-//}
-*/
+void serialWrite(char *c) {
+	for(uint8_t i = 0; i < strlen(c); i++) {
+		appendSerial(c[i]);
+	}
+	if(UCSR0A & (1 << UDRE0)) {
+		UDR0 = 0; //dummy byte to trigger ISR
+	}
+}

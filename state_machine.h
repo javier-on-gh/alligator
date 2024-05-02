@@ -23,6 +23,8 @@ void print_Buffer(char *, size_t);
 void TRYING_GPS(char *);
 void TRY_COMMAND(char *, char *, size_t);
 void RETRY_COMMAND(int, char *, char *, size_t);
-int toggleValue(void);
+int toggleValue(int);
+
+bool handle_Response(char *, size_t);
 
 #endif /* STATE_MACHINE_H_ */

@@ -34,6 +34,8 @@
 extern void init_modules(void);
 
 char *MESSAGE;
+extern char rxBuffer[128];
+extern char txBuffer[128];
 
 int cntTM, cntTE;
 ISR(WDT_vect)
@@ -94,5 +96,11 @@ int main(void)
 	while (1)
 	{
 		computeStateMachine();
+		
+		//serialWrite("AT\r");
+		//print_Buffer(txBuffer, 128);
+		//_delay_ms(1000);
+		//print_Buffer(rxBuffer, 128);
+		//_delay_ms(3000);
 	}
 }

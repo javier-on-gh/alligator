@@ -131,7 +131,7 @@
 #define USART_MPCM0 	0
 
 #define USART_RXC 	1  // RX Complete interrupt debug poner 1
-#define USART_TXC 	0  // TX Complete interrupt
+#define USART_TXC 	1  // TX Complete interrupt
 #define USART_UDRE 	0  // USART data register empty interrupt
 
 // Macro definition for: Timer/Counter 0

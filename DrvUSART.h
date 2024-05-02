@@ -51,8 +51,7 @@ u8 DrvUSART_GetChar(void);
 void DrvUSART_GetString(void);
 void processData(char *, size_t);
 
-//void appendSerial(char);
-//void serialWrite(const char *);
-//char getChar(void);
+void appendSerial(char);
+void serialWrite(char *);
 
 #endif

@@ -63,10 +63,7 @@ void computeStateMachine(void) {
 			asm("sei");
 			
 			//obtener hora
-			DrvUSART_SendStr("AT+QLTS=2\r"); // Pedir hora actual
-			processData(TEMP, sizeof(TEMP));
-			print_Buffer(TEMP, sizeof(TEMP));
-			_delay_ms(2000);
+			TRY_COMMAND("AT+QLTS=2\r"); // Pedir hora actual
 			
 			//PORTB = 0x04; //debug ahora suena el buzzer
 			estado = dormido;
@@ -84,8 +81,8 @@ void computeStateMachine(void) {
 			//_delay_ms(5000);
 			//asm("sei");
 			
-			TRY_COMMAND("AT\r", TEMP, sizeof(TEMP));
-			RETRY_COMMAND(1, "AT+QGPSLOC?\r", TEMP, sizeof(TEMP));
+			TRY_COMMAND("ATT\r", TEMP, sizeof(TEMP));
+			//RETRY_COMMAND(1, "AT+QGPSLOC?\r", TEMP, sizeof(TEMP));
 			
 			PORTB = 0x08;
 			estado = dormido;
@@ -103,7 +100,9 @@ void computeStateMachine(void) {
 void sendATCommands(char *msg) {
 	// si no nos interesa LCD, no es necesario desactivar interrupcion	
 	DrvUSART_SendStr(msg);
-	DrvUSART_GetString();	
+	DrvUSART_GetString();
+	//processData(TEMP, sizeof(TEMP));
+	//print_Buffer(TEMP, sizeof(TEMP));
 	_delay_ms(3000);
 }
 
@@ -135,14 +134,15 @@ void temperatura(){
 
 void GPS() {
 	// Turn on GPS
-	DrvUSART_SendStr("AT+QGPS=1\r");
-	DrvUSART_GetString();
+	//DrvUSART_SendStr("AT+QGPS=1\r");
+	//DrvUSART_GetString();
+	TRY_COMMAND("AT+QGPS=1\r", TEMP, sizeof(TEMP));
 	_delay_ms(2000); //give it some time
-	//if OK or ERROR: 504 try GPSLOC:
 	//TRYING_GPS("AT+QGPSLOC?\r"); // TRY to Get GPS location
 	TRY_COMMAND("AT+QGPSLOC?\r", COORDS, sizeof(COORDS));
 	if (strstr(COORDS, "OK") != NULL) {		
 		DrvUSART_SendStr("AT+QGPSEND\r"); // turn GPS off
+		//serialWrite("AT+QGPSEND\r");
 		DrvUSART_GetString();
 		_delay_ms(1000);
 	}
@@ -203,7 +203,55 @@ void TRYING_GPS(char *command){
 	}
 }
 
+/* WORKS PERFECT: Try command and handle ERRORS or OK responses.*/
+void TRY_COMMAND(char *command, char *buffer, size_t buffersize){
+	int retries = 0;
+	int wait_time = 3000; //in ms
+	while (retries < 3) { //try 3 times		
+		DrvUSART_SendStr(command);
+		//serialWrite(command);
+		processData(buffer, buffersize); // guarda respuesta en buffer		
+		
+		if(handle_Response(buffer, buffersize)){
+			retries = 0;
+			break;
+		}
+		retries++;
+	}
+	if(retries == 3){
+		asm("cli");
+		clear();
+		lcdSendStr("No Good");
+		_delay_ms(1000);
+		asm("sei");
+	}
+}
+bool handle_Response(char *buffer, size_t buffersize) {
+	print_Buffer(buffer, buffersize);
+	_delay_ms(2000);
+	char *errorptr = strstr(buffer, "ERROR: ");
+	if (strstr(buffer, "OK") != NULL) { //si encuentar ok en buffer
+		return true;
+	}
+	else if (errorptr != NULL) {
+		int errorCode = atoi(errorptr + strlen("ERROR: "));
+		switch (errorCode) {
+			case 504: // Session is ongoing no need to retry
+				return true;
+			case 516: // No GPS fix. Retry
+				_delay_ms(3000);
+				return false;
+			default:
+				return true; // Return to the calling function
+		}
+	}
+	else {
+		return true; // just "ERROR", return
+	}
+}
+
 /* Generalized, Works perfect for trying a command multiple times for a determined time */
+/*
 void TRY_COMMAND(char *command, char *buffer, size_t buffersize){
 	int retries = 0;
 	int wait_time = 3000; //in ms
@@ -240,6 +288,8 @@ void TRY_COMMAND(char *command, char *buffer, size_t buffersize){
 		asm("sei");
 	}
 }
+*/
+
 //Different solution with recursion, works fine
 void RETRY_COMMAND(int attempt, char *command, char *buffer, size_t buffersize){
 	int max_retries = 3;
@@ -283,14 +333,17 @@ void print_Buffer(char *buff, size_t buffersize){
 		if(buff[i] == '\0'){
 			//lcdSendStr("*");
 			//_delay_ms(100);
+			//col++;
 		}
 		else if(buff[i] == '\r'){
 			lcdSendStr("+");
 			_delay_ms(100);
+			col++;
 		}
 		else if(buff[i] == '\n'){
 			lcdSendStr("-");
 			_delay_ms(100);
+			col++;
 		}
 		else{
 			lcdSendChar(buff[i]);
@@ -302,8 +355,8 @@ void print_Buffer(char *buff, size_t buffersize){
 	asm("sei");
 }
 
-int toggleValue(void){ //Puede servir como bandera de toggle 0 o 1
-	return toggle ^= 1;
+int toggleValue(int tog){ //Puede servir como bandera de toggle 0 o 1
+	return tog ^= 1;
 }
 
 void clear_Buffer(char *buffer, size_t buffersize){
