@@ -15,7 +15,7 @@ IOT cellular beacon implementation using BG95 and LGT8F328P
 ## Implementation
 State machine control
 
-![state_machine](finatestatemachine.png)
+![state machine](fsm.jpeg)
 
 ## Public Methods
 
@@ -30,6 +30,7 @@ State machine control
 * [void print_Buffer(char *, size_t)](#print_Buffer)
 * [void TRYING_GPS(char *)](#TRYING_GPS)
 * [void TRY_COMMAND(char *, char *, size_t)](#TRY_COMMAND)
+* [bool handle_Response(char *buffer, size_t buffersize)](#handle_Response)
 * [void RETRY_COMMAND(int, char *, char *, size_t)](#RETRY_COMMAND)
 * [int toggleValue(int)](#toggleValue)
 
@@ -60,7 +61,7 @@ example code here
 	* Obtains the light read from ALS-PT19 sensor 
 4. ### temperatura
 	* not implemented yet
-5. ### GPS(void)
+5. ### GPS
 	* Enters location data retrieving routine, enables GNSS, then calls the function TRY_COMMAND to try and get coordinates multiple times
 6. ### clear_Buffer
 	* fills an array with zeros using memset
@@ -68,11 +69,13 @@ example code here
 	* calls lcdSendChar for each char in an array to print on LCD
 8. ### TRY_COMMAND
 	* receives a command and an array to store response, tries a command multiple times and handles specific errors if failed (not implemented yet). If command was successful it breaks
-9. ### TRYING_GPS
+9. ### handle_Response
+	* OK or ERROR handling with switch case. Will be changed to dictionary structure for error specific
+10. ### TRYING_GPS
 	* TRY_COMMAND specific to GPS using COORDS buffer
-10. ### RETRY_COMMAND
+11. ### RETRY_COMMAND
 	* Different implementation for TRY_COMMAND using recursion
-11. ### toggleValue
+12. ### toggleValue
 	* Toggles the received int between 0 and 1 using XOR. Useful for flags.
 
 ## DrvUSART.c
