@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
+#include <avr/io.h>
 #include <stdio.h>
 #include <stddef.h>
 
@@ -36,6 +38,11 @@ extern void init_modules(void);
 char *MESSAGE;
 extern char rxBuffer[128];
 extern char txBuffer[128];
+
+/************* DEBUG COSAS NUEVAS **************/
+//static char print_buffer[64] = {0};
+#define RTC_ADDR (0x68)
+/*****************************************/
 
 int cntTM, cntTE;
 ISR(WDT_vect)
@@ -53,21 +60,31 @@ ISR(WDT_vect)
 		cntTE = 0;
 		estado = envio;
 	}
-	PORTB |=(1<<PORTB5);
-	_delay_ms(25);
-	PORTB &= ~(1 << PORTB5);
+	//iluminacion(); //debug
+}
+
+void bg95_On(){
+	PORTC |= (1 << PORTC3);
+	_delay_ms(600);
+	PORTC &= ~(1 << PORTC3);
+	_delay_ms(3000); // until led blinks
 }
 
 int main(void)
 {	
 	DrvSYS_Init();
 	DrvUSART_Init();
-	DrvTWI_Init();
+	/************* DEBUG COSAS NUEVAS **************/
+	//const char start[] = "\n\rProgram Start\n\r";
+	//uint8_t err = 0;
+	twi_init(100000); //100khz or 400khz, whatever
+	//uint8_t rtc_data[7] = {0x50,0x59,0x23,0x07,0x31,0x10,0x20};
+	/*****************************************/
 	lcd_inicio();
 	
 	cntTM = 0;
 	cntTE = 0;
-	estado = movimiento;
+	estado = dormido; //debug
 	
 	u8 u8Reg;
 	u8Reg = PMCR | (WDT_WCLKS << 4);
@@ -78,7 +95,6 @@ int main(void)
 	asm("wdr");//__watchdog_reset();
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
 	WDTCSR =  0b11000100; // wdif - wdie - wdp3 - wdce - wde - wpd2 - wdp1 - wpd0
-	SEI();
 	SMCR = 0x05; // modo = power down, habilita sleep
 	
 	DDRB = 0xff; // prende un led o...
@@ -87,20 +103,24 @@ int main(void)
 	PORTB = 0x00;
 	DDRD |= (0x01<<PORTD1);
 	PORTD = 0x02;
+	DDRC |= (1 << PORTC3); //POWER PORT
+	
+	sei();
 	
 	asm("cli");
 	clear();
 	lcdSendStr("BALATRON");
+	//_delay_ms(1000);
 	asm("sei");
-	//DrvUSART_SendStr("ATE0"); //Quitar el echo
+	
+	bg95_On();
+	Module_Init();
+	DrvUSART_SendStr("AT+QGPS=1\r");
 	while (1)
 	{
 		computeStateMachine();
-		
-		//serialWrite("AT\r");
-		//print_Buffer(txBuffer, 128);
-		//_delay_ms(1000);
-		//print_Buffer(rxBuffer, 128);
-		//_delay_ms(3000);
+		//float data[4] = {0};  // unit: g
+		//MXC4005XC_GetData(data);
+		//print_Buffer(data, sizeof(data));
 	}
 }

@@ -152,11 +152,11 @@ typedef enum _logic
 
 /** Interrupt Vector Number */
 #define IVN_RESET		L_VECTOR(0)
-#define IVN_EXINT0		L_VECTOR(1)
+#define IVN_EXINT0		L_VECTOR(1) // External interrupt request 0 (INT0) PD2
 #define IVN_EXINT1		L_VECTOR(2)
 #define IVN_PCINT0		L_VECTOR(3)
-#define IVN_PCINT1		L_VECTOR(4)
-#define IVN_PCINT2		L_VECTOR(5)
+#define IVN_PCINT1		L_VECTOR(4) //Pin change Interrupt 1 (PCI)
+#define IVN_PCINT2		L_VECTOR(5) //Pin change Interrupt 2 (PCI)
 #define IVN_WDT			L_VECTOR(6)
 #define IVN_TC2_OCA		L_VECTOR(7)
 #define IVN_TC2_OCB		L_VECTOR(8)
@@ -175,7 +175,7 @@ typedef enum _logic
 #define IVN_ADC			L_VECTOR(21)
 #define IVN_EE_RDY		L_VECTOR(22)
 #define IVN_AC0			L_VECTOR(23)
-#define IVN_TWI			L_VECTOR(24)
+#define IVN_TWI			L_VECTOR(24) // TWI interruption
 #define IVN_AC1			L_VECTOR(25)
 #define IVN_PCINT3		L_VECTOR(27)
 #define IVN_PCINT4		L_VECTOR(28)

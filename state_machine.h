@@ -20,11 +20,12 @@ void GPS(void);
 void clear_Buffer(char *, size_t);
 void print_Buffer(char *, size_t);
 
-void TRYING_GPS(char *);
 void TRY_COMMAND(char *, char *, size_t);
-void RETRY_COMMAND(int, char *, char *, size_t);
 int toggleValue(int);
 
+void Module_Init(void);
 bool handle_Response(char *, size_t);
+bool handleErrorCode(char *, size_t);
+
 
 #endif /* STATE_MACHINE_H_ */

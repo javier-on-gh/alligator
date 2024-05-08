@@ -67,6 +67,7 @@
 	void lcdSendStr(char *str);
 	void lcdSendLargeStr(char *str);
 	void lcdSendChar(char u8Char);
+	void lcdSendfloat(float u8Char);
 	
 	
 	void clear();
@@ -102,7 +103,7 @@
 	void setBacklight(uint8_t new_val);				// alias for backlight() and nobacklight()
 	
 	////Unsupported API functions (not implemented in this library)
-	uint8_t status();
+	//uint8_t status();
 	void setContrast(uint8_t new_val);
 	uint8_t keypad();
 	void setDelay(int,int);

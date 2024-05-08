@@ -39,7 +39,7 @@
 #define EXINT_PCIB3MSK 	0
 #define EXINT_PCIB4MSK 	0
 #define EXINT_PCID2MSK 	0
-#define EXINT_INT0EN 	1
+#define EXINT_INT0EN 	1 // External interrupt request 0 (INT0) PD2
 #define EXINT_PCID1MSK 	0
 #define EXINT_PCID0MSK 	0
 #define EXINT_PCIC6MSK 	0
@@ -184,7 +184,7 @@
 #define TWI_MODE 	0x0  	// TWI(I2C) Master mode
 #define TWI_ADDR 	0x20
 #define TWI_GCE 	0
-#define TWI_TWINT 	0
+#define TWI_TWINT 	0 // TWI interruption
 #define TWI_BITRATE 	100
 #define TWI_TWBR 	16
 #define TWI_TWPS 	0x0  	// prescale by 1

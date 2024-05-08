@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include "allinone.h"
 
 enum state estado = dormido; //start state
@@ -21,31 +22,49 @@ enum state estado = dormido; //start state
 extern char *MESSAGE;
 char TEMP[128] = {0};
 char COORDS[128] = {0};
-	
 int toggle = 0; //puede servir como bandera toggle 0 o 1
-bool commandOK = false;
-bool commandERROR = false; //flags to check if command was succesful or not
+extern char lastCommand[50];
+
+typedef struct {
+	int code; //err code
+	//bool handled; //change this to a function pointer for specific error handling
+	bool (*action)(void); //(char *buffer, size_t buffersize);
+} ERROR;
+
+bool handleMoveOn(void){return true;}
+bool handleRetry(void){return false;}
+bool handle505(void){
+	int comparison = strncmp("AT+QGPSEND\r", lastCommand, strlen(lastCommand));
+	if (comparison == 0){ //if strings are equal
+		return true; //already off
+	}
+	TRY_COMMAND("AT+QGPS=1\r", TEMP, sizeof(TEMP));
+	return false;
+}
+	
+ERROR errorActions[] = { //ERROR codes handling
+	{504, handleMoveOn}, //Session is ongoing, continue
+	{505, handle505}, //Session not active, try last command again
+	{506, handleMoveOn}, //Operation timeout, continue
+	{507, handleMoveOn}, //Function  not enabled, continue
+	{516, handleRetry}, //No fix, try again
+	{549, handleMoveOn}, //Unknown error, continue
+};
 
 void computeStateMachine(void) {
 	switch(estado)
 	{
 		case dormido:
-			asm("cli");
-			clear();
-			lcdSendStr("dormido");
-			asm("sei");
+			//asm("cli");
+			//clear();
+			//lcdSendStr("dormido");
+			//asm("sei");
 			
 			//if acelerometro se mueve: estado = movimiento
 			PORTB = 0x01;
 			break;
 		
-		case muestreo:
-			asm("cli");
-			clear();
-			lcdSendStr("muestreo");
-			//_delay_ms(1000);
-			asm("sei");
-			
+		case muestreo:			
 			//sendATCommands("AT\r");
 			//iluminacion();
 			//temperatura();
@@ -56,14 +75,8 @@ void computeStateMachine(void) {
 			break;
 		
 		case envio: //mandar a la nube
-			asm("cli");
-			clear();
-			lcdSendStr("enviando");
-			//_delay_ms(1000);
-			asm("sei");
-			
 			//obtener hora
-			TRY_COMMAND("AT+QLTS=2\r"); // Pedir hora actual
+			TRY_COMMAND("AT+QLTS=2\r", TEMP, sizeof(TEMP)); // Pedir hora actual
 			
 			//PORTB = 0x04; //debug ahora suena el buzzer
 			estado = dormido;
@@ -76,15 +89,13 @@ void computeStateMachine(void) {
 			//print_Buffer(COORDS, sizeof(COORDS));
 			//_delay_ms(5000);
 			
-			//asm("cli");
-			//lcdSendLargeStr("!23456789qwerty*!mnbvcxzlkjhgfd*");
-			//_delay_ms(5000);
-			//asm("sei");
+			//TRY_COMMAND("ATT\r", TEMP, sizeof(TEMP));
 			
-			TRY_COMMAND("ATT\r", TEMP, sizeof(TEMP));
-			//RETRY_COMMAND(1, "AT+QGPSLOC?\r", TEMP, sizeof(TEMP));
+			//read accelerometer and print
+			PORTB = 0x04; //BUZZER debug
+			_delay_ms(1000);
 			
-			PORTB = 0x08;
+			//PORTB = 0x08;
 			estado = dormido;
 			break;
 		
@@ -103,15 +114,11 @@ void sendATCommands(char *msg) {
 	DrvUSART_GetString();
 	//processData(TEMP, sizeof(TEMP));
 	//print_Buffer(TEMP, sizeof(TEMP));
-	_delay_ms(3000);
+	_delay_ms(2000);
 }
 
-/*
-	ILUMINACION
-	Lee la iluminacion ambiental dentro del equipo
-	ADC6 <- ALS-PT19
-*/
 void iluminacion(){
+	// Lee la iluminacion ambiental dentro del equipo (ADC6 <- ALS-PT19)
 	u16 luz;
 	PORTB |= (1<<PORTB5); //Energiza ALS-PT19
 	DrvADC_Init(); //Inicializa ADC
@@ -133,191 +140,15 @@ void temperatura(){
 }
 
 void GPS() {
-	// Turn on GPS
-	//DrvUSART_SendStr("AT+QGPS=1\r");
-	//DrvUSART_GetString();
-	TRY_COMMAND("AT+QGPS=1\r", TEMP, sizeof(TEMP));
-	_delay_ms(2000); //give it some time
-	//TRYING_GPS("AT+QGPSLOC?\r"); // TRY to Get GPS location
+	TRY_COMMAND("AT+QGPS=1\r", TEMP, sizeof(TEMP)); // Turn on GPS
+	//_delay_ms(1000); // give it some time
 	TRY_COMMAND("AT+QGPSLOC?\r", COORDS, sizeof(COORDS));
 	if (strstr(COORDS, "OK") != NULL) {		
-		DrvUSART_SendStr("AT+QGPSEND\r"); // turn GPS off
-		//serialWrite("AT+QGPSEND\r");
-		DrvUSART_GetString();
-		_delay_ms(1000);
+		TRY_COMMAND("AT+QGPSEND\r", TEMP, sizeof(TEMP)); // turn GPS off
 	}
 }
 
-void TRYING_GPS(char *command){
-	int retries = 0;
-	int wait_time = 3000;
-	while (retries < 3) { //try 3 times
-		DrvUSART_SendStr(command);
-		processData(COORDS, sizeof(COORDS));
-		asm("cli");
-		clear();
-		lcdSendStr("Trying GPS...");
-		char str[4];
-		sprintf(str, "%d", retries);
-		lcdSendStr(str);
-		//setCursor(0, toggleValue());
-		asm("sei");
-		
-		//if ERROR 505: GNSS is OFF
-		//if ERROR 516: loc not fixed, wait a little try again then break
-		//if OK continue, if ERROR 505: GNSS is already OFF
-		if (strstr(COORDS, "OK") != NULL) { //debug: try "OK\0"
-			print_Buffer(COORDS, sizeof(COORDS)/sizeof(COORDS[0])); //show coords (do something with the buffer)
-			_delay_ms(2000);
-			
-			DrvUSART_SendStr("AT+QGPSEND\r"); // turn GPS off
-			DrvUSART_GetString();
-			_delay_ms(1000);
-			retries = 0;
-			break; //done
-		}
-		else if (strstr(COORDS, "ERROR: 505") != NULL) { //if GPS is OFF
-			DrvUSART_SendStr("AT+QGPS=1\r"); //turn it on
-			DrvUSART_GetString();
-			_delay_ms(1000);
-			retries = 0; //try again 3 times
-		}
-		else if (strstr(COORDS, "ERROR: 516") != NULL) {
-			//print_Buffer(COORDS, sizeof(COORDS));
-			//_delay_ms(2000);
-			asm("cli");
-			setCursor(0, 1);
-			lcdSendStr("No fix yet");
-			asm("sei");
-		}
-		// Location not fixed, wait and try again	
-		retries ++;
-		_delay_ms(wait_time);
-	}
-	if(retries == 3){
-		asm("cli");
-		clear();
-		lcdSendStr("No GPS fix!");
-		_delay_ms(1000);
-		asm("sei");
-	}
-}
-
-/* WORKS PERFECT: Try command and handle ERRORS or OK responses.*/
-void TRY_COMMAND(char *command, char *buffer, size_t buffersize){
-	int retries = 0;
-	int wait_time = 3000; //in ms
-	while (retries < 3) { //try 3 times		
-		DrvUSART_SendStr(command);
-		//serialWrite(command);
-		processData(buffer, buffersize); // guarda respuesta en buffer		
-		
-		if(handle_Response(buffer, buffersize)){
-			retries = 0;
-			break;
-		}
-		retries++;
-	}
-	if(retries == 3){
-		asm("cli");
-		clear();
-		lcdSendStr("No Good");
-		_delay_ms(1000);
-		asm("sei");
-	}
-}
-bool handle_Response(char *buffer, size_t buffersize) {
-	print_Buffer(buffer, buffersize);
-	_delay_ms(2000);
-	char *errorptr = strstr(buffer, "ERROR: ");
-	if (strstr(buffer, "OK") != NULL) { //si encuentar ok en buffer
-		return true;
-	}
-	else if (errorptr != NULL) {
-		int errorCode = atoi(errorptr + strlen("ERROR: "));
-		switch (errorCode) {
-			case 504: // Session is ongoing no need to retry
-				return true;
-			case 516: // No GPS fix. Retry
-				_delay_ms(3000);
-				return false;
-			default:
-				return true; // Return to the calling function
-		}
-	}
-	else {
-		return true; // just "ERROR", return
-	}
-}
-
-/* Generalized, Works perfect for trying a command multiple times for a determined time */
-/*
-void TRY_COMMAND(char *command, char *buffer, size_t buffersize){
-	int retries = 0;
-	int wait_time = 3000; //in ms
-	while (retries < 3) { //try 3 times
-		DrvUSART_SendStr(command); //manda comando
-		processData(buffer, buffersize); // guarda respuesta en buffer
-		asm("cli");
-		clear();
-		lcdSendStr("Trying...");
-		char str[2];
-		sprintf(str, "%d", retries);
-		lcdSendStr(str);
-		//setCursor(0, toggleValue());
-		asm("sei");
-		
-		if (strstr(buffer, "OK") != NULL) { //si encuentar ok en buffer
-			print_Buffer(buffer, buffersize); //imprime respuesta
-			_delay_ms(2000);
-			retries = 0;
-			break; //done
-		}
-		//debug: agregar manejo de codigos de errores.
-		else if (strstr(buffer, "ERROR") != NULL) { // si encuentra error en buffer
-			print_Buffer(buffer, buffersize); //imprime el error y try again (debug: con errores especificos)
-		}
-		retries ++;
-		_delay_ms(wait_time);
-	}
-	if(retries == 3){
-		asm("cli");
-		clear();
-		lcdSendStr("No Good");
-		_delay_ms(1000);
-		asm("sei");
-	}
-}
-*/
-
-//Different solution with recursion, works fine
-void RETRY_COMMAND(int attempt, char *command, char *buffer, size_t buffersize){
-	int max_retries = 3;
-	int wait_time = 3000; //in ms
-	DrvUSART_SendStr(command); //manda comando
-	processData(buffer, buffersize); // guarda respuesta en buffer
-	if (strstr(buffer, "OK") != NULL) { //si encuentar ok en buffer
-		print_Buffer(buffer, buffersize); //imprime respuesta
-		_delay_ms(2000);
-		//attempt = 0;
-		return; //done
-	}
-	else if (strstr(buffer, "ERROR") != NULL) { // si encuentra error en buffer
-		print_Buffer(buffer, buffersize); //imprime el error y try again (debug: con errores especificos)
-	}
-	_delay_ms(wait_time);	
-	if (attempt <= max_retries) {
-		RETRY_COMMAND(attempt + 1, command, buffer, buffersize);
-	}
-	else {
-		asm("cli");
-		lcdSendStr("Failed!");
-		_delay_ms(2000);
-		asm("sei");
-	}
-}
-
-//WORKS PERFECT
+//WORKS PERFECT //DEBUG lcd
 void print_Buffer(char *buff, size_t buffersize){
 	uint8_t col = 0;
 	uint8_t row = 0;
@@ -327,7 +158,7 @@ void print_Buffer(char *buff, size_t buffersize){
 		if (col == 16) {
 			col = 0;
 			row = (row + 1) % 2; // toggle between line 0 and 1
-			setCursor(0, row);
+			//setCursor(0, row);
 			//setCursor(0, toggleValue()); // Set cursor to the toggled row
 		}
 		if(buff[i] == '\0'){
@@ -341,13 +172,13 @@ void print_Buffer(char *buff, size_t buffersize){
 			col++;
 		}
 		else if(buff[i] == '\n'){
-			lcdSendStr("-");
+			lcdSendStr(" ");
 			_delay_ms(100);
 			col++;
 		}
 		else{
 			lcdSendChar(buff[i]);
-			_delay_ms(150);
+			_delay_ms(100);
 			col++; // Move to the next column
 		}
 	}
@@ -364,4 +195,81 @@ void clear_Buffer(char *buffer, size_t buffersize){
 	//for (int j = 0; j < buffersize; j++) {
 	//buffer[j] = '\0';
 	//}
+}
+
+void Module_Init(void){
+	//bg95_On(); //mejor en main para evitar fallas
+	TRY_COMMAND("AT\r", TEMP, sizeof(TEMP));
+	//TRY_COMMAND("AT+GSN\r", TEMP, sizeof(TEMP)); //imei
+	//TRY_COMMAND("AT+CIMI\r", TEMP, sizeof(TEMP)); //CIMI
+	TRY_COMMAND("AT+CREG?\r", TEMP, sizeof(TEMP)); //CREG
+	TRY_COMMAND("AT+COPS?\r", TEMP, sizeof(TEMP)); //COPS	
+	TRY_COMMAND("ATE1\r", TEMP, sizeof(TEMP)); //Poner el eco
+	TRY_COMMAND("AT+CCLK?\r", TEMP, sizeof(TEMP)); //hora
+}
+
+/* WORKS PERFECT: Try command and handle response */
+void TRY_COMMAND(char *command, char *buffer, size_t buffersize){
+	int retries = 0;
+	int max_retries = 3;
+	int wait_time = 3000; //in ms
+	while (retries < max_retries) { //try 3 times
+		DrvUSART_SendStr(command);
+		//serialWrite(command);
+		processData(buffer, buffersize); // guarda respuesta en buffer
+		
+		//bool response = handle_Response(buffer, buffersize);
+		bool response = handleErrorCode(buffer, buffersize);
+		if(response){
+			retries = 0;
+			break;
+		}
+		//asm("cli");
+		//char str[4];
+		//sprintf(str, "%d", retries);
+		//lcdSendStr(str);
+		//asm("sei");
+		_delay_ms(wait_time);
+		retries++;
+	}
+	if(retries == max_retries){
+		//asm("cli");
+		//clear();
+		//lcdSendStr("Command Failed!");
+		//_delay_ms(500);
+		//asm("sei");
+	}
+}
+
+bool handle_Response(char *buffer, size_t buffersize) {
+	print_Buffer(buffer, buffersize);
+	_delay_ms(1000);
+	char *errorptr = strstr(buffer, "ERROR: ");
+	if (errorptr != NULL) {
+		int errorCode = atoi(errorptr + strlen("ERROR: "));
+		switch (errorCode) {
+			case 504: // Session is ongoing no need to retry
+			return true;
+			case 516: // No GPS fix. Retry
+			return false;
+			default:
+			return true; // Return to the calling function
+		}
+	}
+	return true; // just "ERROR" or "OK", return
+}
+
+bool handleErrorCode(char *buffer, size_t buffersize) {
+	print_Buffer(buffer, buffersize);
+	_delay_ms(1000);
+	char *errorptr = strstr(buffer, "ERROR: ");
+	if (errorptr != NULL) {
+		int errorCode = atoi(errorptr + strlen("ERROR: "));
+		for (size_t i = 0; i < sizeof(errorActions) / sizeof(errorActions[0]); i++) {
+			if (errorActions[i].code == errorCode) {
+				return errorActions[i].action();
+			}
+		}
+	}
+	return true; // just "ERROR" or "OK", return
 }
