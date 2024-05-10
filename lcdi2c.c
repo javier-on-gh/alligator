@@ -190,26 +190,6 @@ void lcdSendChar(char u8Char)
 	send(u8Char, 1);
 }
 
-void lcdSendfloat(float u8Char)
-{
-	char str[20];
-	sprintf(str, "%.4f", u8Char);
-	for(int i = 0; i<sizeof(str); i++){
-		//printf("%c", str[i]);
-		//sprintf(str, "%c", str[i]);
-		if(str[i] == '1'){
-			lcdSendStr("1");
-		}
-		if(str[i] == '9'){
-			lcdSendStr("9");
-		}
-		if(str[i] == '8'){
-			lcdSendStr("8");
-		}
-		//lcdSendChar(str[i]);
-	}
-}
-
 //prints from 0,0 and overwrites rows if col==16
 void lcdSendLargeStr(char *str) {
 	char *pt = str;
@@ -256,3 +236,30 @@ void lcd_inicio(){
 	send(0x40, 0);	// i/d , sh 
 	_delay_ms(2);	
 }
+/*
+void lcd_inicio() {
+	_rows = 2;  // Set number of rows to 2
+	_cols = 16; // Set number of columns to 16
+	_displayfunction = LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS; // Update display function
+	// Rest of the initialization code remains the same
+	// Ensure that proper delays are maintained throughout the initialization process
+	_delay_ms(50);
+	send(0x30, 0);	//Function set
+	_delay_us(40);
+	send(0x20, 0);	//Function set
+	send(0x80, 0);	//LINEAS 2, FUENTE 5X8 PUNTOS
+	_delay_us(40);
+	send(0x20, 0);	//Function set
+	send(0x80, 0);	//LINEAS = 2, FUENTE = 5X8 PUNTOS
+	_delay_us(40);
+	send(0x00, 0);	//Display ON/OFF control
+	send(0xf0, 0);	// set display, cursor, blinking
+	_delay_us(40);
+	send(0x00, 0);	//Display clear
+	send(0x10, 0);
+	_delay_ms(2);
+	send(0x00, 0);	//Entry mode set
+	send(0x40, 0);	// i/d , sh
+	_delay_ms(2);
+}
+*/

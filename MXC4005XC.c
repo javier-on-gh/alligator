@@ -6,119 +6,196 @@
  */
 #include "allinone.h"
 #include "MXC4005XC.h"
+#include <util/delay.h>
 
-#define INITIAL_TRX 1 // neutral value
-
-////////////////////////////////////////////////////////////////////////////////
-// I2C raro
-////////////////////////////////////////////////////////////////////////////////
-
-uint8_t I2C_Write_Reg(uint8_t i2c_add, uint8_t reg_add, uint8_t cmd) {
-	// i2c_add is the 7-bit i2c address of the sensor
-	// reg_add is the register address to wtite
-	// cmd is the value that needs to be written to the register
-	// I2C operating successfully, return 1, otherwise return 0;
-	uint8_t trx = INITIAL_TRX;
-	//trx *= twi_start();
-	trx *= twi_write(i2c_add, reg_add, &cmd, 1); // DEBUG: try sizeof(&cmd)
-	//twi_stop();
-	return trx; // Return the number of transceived bytes
+ISR(INT0_vect){
+	//interrupcion de acelerometro INT pin
+	//1 leer registro STATUS o INT_SRC0 podria ser aqui pero funcion para leer tiene busy waits
+	//2 if cambio: estado = movimiento
+	estado = movimiento; //aqui se hace todo lo de leer data, clear, etc (mas limpio creo)
+	//3 escribir 1 en posicion de INT_CLR0 para hacer clear en esa especifica posicion
+	// Toda la rutina se hace en "movimiento" para no atorar en ISR()
 }
 
-uint8_t I2C_MultiRead_Reg(uint8_t i2c_add, uint8_t reg_add, uint8_t num, uint8_t *data) {
-	// i2c_add is the 7-bit i2c address of the sensor
-	// reg_add is the first register address to read
-	// num is the number of the register to read
-	// data is the address of the buffer
-	// I2C operating successfully, return 1, otherwise return 0;
-	uint8_t trx = INITIAL_TRX;
-	//trx *= twi_start();
-	trx *= twi_write(i2c_add, reg_add, NULL, 0); // DEBUG NULL
-	//trx *= twi_restart(); //debug
-	trx *= twi_read(i2c_add, reg_add, data, num);
-	return trx;
+void MXC4005XC_init(void){
+	// Configure INT0 (PD2) pin for falling edge trigger
+	EICRA |= (1 << ISC01);
+	EICRA &= ~(1 << ISC00);
+	EIMSK |= (1 << INT0); // Enable external interrupt INT0
+	EscribeMXC4005XC_NI(MXC4005XC_REG_INT_MASK0, MXC4005XC_INT_MASK0_EN); //enable all INT_MASK0 Interrupts
+	//EscribeMXC4005XC_NI(MXC4005XC_REG_INT_MASK0, MXC4005XC_INT_MASK1_EN); //enable all INT_MASK1 Interrupts //debug
+	
+	EscribeMXC4005XC_NI(MXC4005XC_REG_CTRL, MXC4005XC_CMD_2G_POWER_ON); //initial setup 2g
+	//EscribeMXC4005XC_NI(MXC4005XC_REG_DETECTION, MXC4005XC_DETECTION_PARAMS) //debug
 }
 
-uint8_t I2C_Read_Reg(uint8_t i2c_add, uint8_t reg_add, uint8_t *data) {
-	uint8_t trx = INITIAL_TRX; //DEBUG wrong
-	//trx *= twi_start();
-	trx *= twi_read(i2c_add, reg_add, data, 1);
-	return trx;
+void EscribeMXC4005XC_NI(u8 regAddr, u8 data){
+	//1 START CONDITION
+	cbi(TWCR, TWIE); // disable TWI interrupt
+	DrvTWI_SendStart(); // send start condition
+	DrvTWI_WaitForComplete();
+	//2 DEVICE ADDRESS with WRITE (0)
+	DrvTWI_SendByte(MXC4005XC_ADDRESS << 1 | 0); // Direccion i2c del MXC4005 con WRITE (2a)
+	DrvTWI_WaitForComplete();
+	//3 REGISTER ADDRESS
+	DrvTWI_SendByte(regAddr); // Direccion del registro dentro del MXC4005
+	DrvTWI_WaitForComplete();
+	
+	//4 DATA[7:0]
+	DrvTWI_SendByte(data); // Escribir datos en registro especificado
+	DrvTWI_WaitForComplete();
+	
+	// STOP CONDITION end of communication
+	DrvTWI_SendStop();
+	while (!(inb(TWCR)&BV(TWSTO)));
 }
 
-//////////////////////////////////////////////////////////////////////////////////
-// enable the sensor - from power down mode to normal mode
-//////////////////////////////////////////////////////////////////////////////////
-uint8_t MXC4005XC_Enable(uint8_t sda, uint8_t scl)
+//Works for 1 register
+u8 LeeMXC4005XC_NI(u8 regAddr){
+	//1 START CONDITION
+	cbi(TWCR, TWIE); // disable TWI interrupt
+	DrvTWI_SendStart(); // send start condition
+	DrvTWI_WaitForComplete();
+	//2 DEVICE ADDRESS with WRITE (0)
+	DrvTWI_SendByte(MXC4005XC_ADDRESS << 1 | 0); // Direccion i2c del MXC4005 con WRITE (2a)
+	DrvTWI_WaitForComplete();
+	//3 REGISTER ADDRESS
+	DrvTWI_SendByte(regAddr); // Direccion del registro dentro del MXC4005
+	DrvTWI_WaitForComplete();
+	
+	//4 START CONDITION AGAIN
+	DrvTWI_SendStart(); // re envia start
+	DrvTWI_WaitForComplete();
+	//5 DEVICE ADDRESS AGAIN with READ (1)
+	DrvTWI_SendByte(MXC4005XC_ADDRESS << 1 | 1); // Direccion i2c del MXC4005 con READ (2b)
+	DrvTWI_WaitForComplete();
+	//6 NOTACKNOWLEDGE
+	DrvTWI_ReceiveByte(FALSE); // accept receive data and nack it (last-byte signal)
+	DrvTWI_WaitForComplete();
+	
+	u8 valor = DrvTWI_GetReceivedByte(); //store data in variable
+	
+	//7 STOP CONDITION end of communication
+	DrvTWI_SendStop();
+	while (!(inb(TWCR)&BV(TWSTO)));
+	return valor;
+}
+
+/*
+*****************************************
+** GET ALL DATA FUNCTIONS: DEBUG MAKE STATIC????
+*****************************************
+*/
+//Should work: Stores useful sensor data
+void MXC4005XC_GetData_real(float *data)
 {
-	uint8_t trx = INITIAL_TRX; // transceived number of bytes (0 == error)
-
-	// check sensor id
-	uint8_t reg_val = 0;
-	trx *= I2C_Read_Reg(MXC4005XC_ADDRESS, MXC4005XC_REG_DEVICE_ID, &reg_val);
-	if (trx == 0) {
-		//DEBUG_PRINT("E\n");
-		lcdSendStr("xd");
+	uint8_t data_reg[7] = {0}; // data buffer
+	for (uint8_t i = 0; i < 7; i++){
+		data_reg[i] = LeeMXC4005XC_NI(MXC4005XC_REG_DATA+i); //not great, better to create a function for multi reg reading
 	}
-
-	if((reg_val != MXC4005XC_DEVICE_ID_1)&&(reg_val != MXC4005XC_DEVICE_ID_2)) {
-		//DEBUG_PRINT(reg_val);
-		//DEBUG_PRINT('\n'); // save a few bytes vs println!
-		char str[4];
-		sprintf(str, "%d", reg_val);
-		lcdSendStr(str);
-		return 0;
-	}
-
-	// Power On the sensor and set the 2g scale
-	trx *= I2C_Write_Reg(MXC4005XC_ADDRESS, MXC4005XC_REG_CTRL, MXC4005XC_CMD_2G_POWER_ON);
-
-	return trx;
-}
-
-/////////////////////////////////////////////////////////////////////////////////
-// read sensor data
-/////////////////////////////////////////////////////////////////////////////////
-
-void MXC4005XC_GetData(float *data)
-{
-	uint8_t data_reg[7] = {0};
-
-	// read the register data (and check the number of transmitted bytes)
-	if (!I2C_MultiRead_Reg(MXC4005XC_ADDRESS, MXC4005XC_REG_DATA, 7, data_reg)) {
-		//DEBUG_PRINT("E\n");
-		lcdSendStr("xd");
-	}
-
 	for (uint8_t i = 0; i < 3; i++) {
-		data[i] = (float)( (int16_t)(data_reg[i*2]<<8 | data_reg[i*2 + 1]) >> 4 );
-
-		// convert acceleration to g
-		data[i] /= MXC4005XC_2G_SENSITIVITY;
+		data[i] = (float)((int16_t)(data_reg[i*2]<<8 | data_reg[i*2 + 1]) >> 4);
+		data[i] /= MXC4005XC_2G_SENSITIVITY; // convert acceleration to g
 	}
-
-	// convert to unit is degree Celsius
-	data[3] = (float)data_reg[6] * MXC4005XC_T_SENSITIVITY + MXC4005XC_T_ZERO;
+	data[3] = (float)data_reg[6] * MXC4005XC_T_SENSITIVITY + MXC4005XC_T_ZERO; // convert to Celsius
 }
 
-//void MXC4005XC_GetData_char(char *data_str) {
-	//uint8_t data_reg[7] = {0};
-//
-	//// read the register data (and check the number of transmitted bytes)
-	//if (!I2C_MultiRead_Reg(MXC4005XC_ADDRESS, MXC4005XC_REG_DATA, 7, data_reg)) {
-		//// Handle error
-		//lcdSendStr("xd");
-		//return;
+//debug??
+u8 MXC4005XC_Get_Orientation(void)
+{
+	// MXC4005XC_REG_INT_SRC1 
+	/*The ORXY[1:0] and ORZ[1:0] bits in INT_SRC1 indicate the orientation of MXC400xXC.
+	ORXY indicates orientation of the XY plane, and ORZ indicates direction of the Z axis.
+	Mapping of the orientation bits is as follows:
+	*/
+	u8 orxyz = LeeMXC4005XC_NI(MXC4005XC_REG_INT_SRC1);
+	//TILT, ORZ, ORXY[1], ORXY[0], 0, 0, 0, DRDY
+	
+	//TODO: consider the DRDY bit to check if new data is available //debug
+	//if (DRDY bit is set (0x01)){
+		////new data is available in acceleration, go and read it
 	//}
-//
-	//// Convert raw data to string representations
-	//for (uint8_t i = 0; i < 3; i++) {
-		//float value = (float)((int16_t)(data_reg[i*2] << 8 | data_reg[i*2 + 1]) >> 4) / MXC4005XC_2G_SENSITIVITY;
-		//snprintf(data_str + i * MAX_CHAR_LENGTH, MAX_CHAR_LENGTH, "%.2f", value);
-	//}
-//
-	//// Convert temperature data to string representation
-	//float temp_value = (float)data_reg[6] * MXC4005XC_T_SENSITIVITY + MXC4005XC_T_ZERO;
-	//snprintf(data_str + 3 * MAX_CHAR_LENGTH, MAX_CHAR_LENGTH, "%.2f", temp_value);
-//}
+	return orxyz;
+}
 
+//Should work but debug
+void MXC4005XC_Get_Acceleration(u8 data[6])
+{
+	//MXC4005_REG_XOUT_UPPER, etc
+	/*XOUT[11:0] is the 12-bit X-axis acceleration output.
+	The output is in 2's complement format, with a range of ?2048 to +2047.
+	*/
+	data[0] = LeeMXC4005XC_NI(MXC4005_REG_XOUT_UPPER); //X upper
+	data[1] = LeeMXC4005XC_NI(MXC4005_REG_XOUT_LOWER); //X lower
+	data[2] = LeeMXC4005XC_NI(MXC4005_REG_YOUT_UPPER); //Y upper
+	data[3] = LeeMXC4005XC_NI(MXC4005_REG_YOUT_LOWER); //Y lower
+	data[4] = LeeMXC4005XC_NI(MXC4005_REG_ZOUT_UPPER); //Z upper
+	data[5] = LeeMXC4005XC_NI(MXC4005_REG_ZOUT_LOWER); //Z lower
+	for (uint8_t i = 0; i < 6; i++) {
+		data[i] = (float)data[i] / MXC4005XC_2G_SENSITIVITY; // convert acceleration to g
+	}
+}
+
+//Should work
+float MXC4005XC_Get_Temperature(void)
+{
+	//MXC4005_REG_TOUT
+	/*MXC400xXC contains an on-chip temperature sensor whose output can be read through the I2C
+	interface. The output is in 2's complement format. The nominal value of TOUT[7:0] is 0 at a 
+	temperature of 25°C, and the sensitivity of the output is approximately 0.586°C/LSB.
+	*/
+	u8 val = LeeMXC4005XC_NI(MXC4005_REG_TOUT);
+	float temp = (float)val * MXC4005XC_T_SENSITIVITY + MXC4005XC_T_ZERO; //casting to convert to float
+	return temp;
+}
+
+/*
+// debug ??
+void LeeMuchos(u8 regAddr, int num, uint8_t *data){ //DEBUG
+	//1 START CONDITION
+	cbi(TWCR, TWIE); // disable TWI interrupt
+	DrvTWI_SendStart(); // send start condition
+	DrvTWI_WaitForComplete();
+	//2 DEVICE ADDRESS with WRITE (0)
+	DrvTWI_SendByte(MXC4005XC_ADDRESS << 1 | 0); // Direccion i2c del MXC4005 con WRITE (2a)
+	DrvTWI_WaitForComplete();
+	//3 REGISTER ADDRESS
+	DrvTWI_SendByte(regAddr); // Direccion del registro dentro del MXC4005
+	DrvTWI_WaitForComplete();
+
+	//4 START CONDITION AGAIN
+	DrvTWI_SendStart(); // re envia start
+	DrvTWI_WaitForComplete();
+
+	for (uint8_t i = 0; i < num; i++){
+		//5 DEVICE ADDRESS AGAIN with READ (1)
+		DrvTWI_SendByte(MXC4005XC_ADDRESS << 1 | 1); // Direccion i2c del MXC4005 con READ (2b)
+		DrvTWI_WaitForComplete();
+
+		//DrvTWI_ReceiveByte(TRUE);
+		//DrvTWI_WaitForComplete();
+		data[i] = DrvTWI_GetReceivedByte(); //store data in variable
+	}
+
+	//6 NOT ACKNOWLEDGE
+	DrvTWI_ReceiveByte(FALSE); // accept receive data and nack it (last-byte signal)
+	DrvTWI_WaitForComplete();
+
+	//7 STOP CONDITION end of communication
+	DrvTWI_SendStop();
+	while (!(inb(TWCR)&BV(TWSTO)));
+}
+
+// debug ??
+void MXC4005XC_GetData_test(float *data)
+{
+	//aqui juntar todas las funciones de data
+	uint8_t data_reg[7] = {0};
+	LeeMuchos(MXC4005XC_ADDRESS, MXC4005XC_REG_DATA, 7, data_reg);
+	for (uint8_t i = 0; i < 3; i++) {
+		data[i] = (float)((int16_t)(data_reg[i*2]<<8 | data_reg[i*2 + 1]) >> 4);
+		data[i] /= MXC4005XC_2G_SENSITIVITY; // convert acceleration to g
+	}
+	data[3] = (float)data_reg[6] * MXC4005XC_T_SENSITIVITY + MXC4005XC_T_ZERO; // convert to Celsius
+}
+*/

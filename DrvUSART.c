@@ -3,6 +3,8 @@
 #include "allinone.h"
 #include "DrvUSART.h"
 
+//#include "oled.h"
+#include "lcdi2c.h"
 #include <string.h>
 #include <util/delay.h>
 
@@ -37,10 +39,10 @@ uint8_t txReadPos = 0;
 uint8_t txWritePos = 0;
 
 ISR(USART_TX_vect) {
-	if(txReadPos != txWritePos) {
-		UDR0 = txBuffer[txReadPos];
-		txReadPos = (txReadPos + 1) % BUFFER_SIZE;
-	}
+	//if(txReadPos != txWritePos) {
+		//UDR0 = txBuffer[txReadPos];
+		//txReadPos = (txReadPos + 1) % BUFFER_SIZE;
+	//}
 }
 
 void DrvUSART_Init(void)
@@ -91,10 +93,10 @@ u8 DrvUSART_GetChar(void)
 
 /******* With interrupts, using circular buffers *******/
 // reads buffer filled on RXC interrupt
-void DrvUSART_GetString(void) { //DEBUG lcd
-	//asm("cli");
+void DrvUSART_GetString(void) {
+	asm("cli");
 	char caracter;
-	//clear();
+	clear();
 	while (rxReadPos != rxWritePos) { // until it reaches write pos
 		caracter = rxBuffer[rxReadPos];
 		
@@ -102,49 +104,51 @@ void DrvUSART_GetString(void) { //DEBUG lcd
 			break;
 		}
 		if (caracter == '\r') {
+			//lcdSendStr("cr");
 		}
 		else if (caracter == '\n') {
+			lcdSendStr(" "); //lf
 		}
 		else {
+			lcdSendChar(caracter);
 		}
 		//if rxReadPos reaches 127 it returns to 0
 		rxReadPos = (rxReadPos + 1) % BUFFER_SIZE;
 	}
-	//asm("sei");
+	asm("sei");
 }
 
 /* For storing everything except echoed command in linear buffer */
 /* WORKS PERFECT WITH AND WITHOUT ECHO */
-void processData(char *buff, size_t buffsize) { //DEBUG lcd
-	//asm("cli");
+void processData(char *buff, size_t buffsize) {
 	memset(buff, 0, buffsize); // clear buff
-	//clear();
 	int i = 0;
-	// DEBUG: Uncomment if echo is not necessary
-	//char *lastCommandPtr = &rxBuffer[rxReadPos]; //points to first character of received response each time.
-	//if(strncmp(lastCommandPtr, lastCommand, strlen(lastCommand)) == 0){ //compares pointer to lastcommand
-		//lastCommandPtr += strlen(lastCommand)+2; //moves pointer to after echoed command+\r\n
-		//rxReadPos = lastCommandPtr - rxBuffer; //gives you index where the pointer points
-	//}
-	while (rxReadPos != rxWritePos) {
+	
+	//DEBUG: Comment for debugging with echo / Uncomment if echo is not necessary
+	////////////************************************************////////////
+	char *lastCommandPtr = &rxBuffer[rxReadPos]; //points to first character of received response each time.
+	if(strncmp(lastCommandPtr, lastCommand, strlen(lastCommand)) == 0){ //compares pointer to lastcommand
+		lastCommandPtr += strlen(lastCommand)+2; //moves pointer to after echoed command+\r\n
+		rxReadPos = lastCommandPtr - rxBuffer; //gives you index where the pointer points
+	}
+	////////////************************************************////////////
+	
+	while (rxReadPos != rxWritePos && i < buffsize - 1) {
 		if (rxBuffer[rxReadPos] == '\r') {
 			//buff[i] = rxBuffer[rxReadPos];
 			//i++;
 		}
 		else if (rxBuffer[rxReadPos] == '\n') {
-			buff[i] = rxBuffer[rxReadPos];
+			buff[i] = rxBuffer[rxReadPos]; //store line feeds for separating string
 			i++;
 		}
 		else {
 			buff[i] = rxBuffer[rxReadPos]; //store response
-			//_delay_ms(1000);
 			i++;
 		}
 		rxReadPos = (rxReadPos + 1) % BUFFER_SIZE;
 	}
-	//debug handle buffer overflow
 	buff[i] = '\0'; //null terminate
-	//asm("sei");
 }
 
 // FOR TXC INTERRUPT

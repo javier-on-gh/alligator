@@ -28,8 +28,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <stdint.h>
-#include <avr/io.h>
 #include <stdio.h>
 #include <stddef.h>
 
@@ -38,11 +36,6 @@ extern void init_modules(void);
 char *MESSAGE;
 extern char rxBuffer[128];
 extern char txBuffer[128];
-
-/************* DEBUG COSAS NUEVAS **************/
-//static char print_buffer[64] = {0};
-#define RTC_ADDR (0x68)
-/*****************************************/
 
 int cntTM, cntTE;
 ISR(WDT_vect)
@@ -60,31 +53,21 @@ ISR(WDT_vect)
 		cntTE = 0;
 		estado = envio;
 	}
-	//iluminacion(); //debug
-}
-
-void bg95_On(){
-	PORTC |= (1 << PORTC3);
-	_delay_ms(600);
-	PORTC &= ~(1 << PORTC3);
-	_delay_ms(3000); // until led blinks
 }
 
 int main(void)
 {	
 	DrvSYS_Init();
 	DrvUSART_Init();
-	/************* DEBUG COSAS NUEVAS **************/
-	//const char start[] = "\n\rProgram Start\n\r";
-	//uint8_t err = 0;
-	twi_init(100000); //100khz or 400khz, whatever
-	//uint8_t rtc_data[7] = {0x50,0x59,0x23,0x07,0x31,0x10,0x20};
-	/*****************************************/
+	DrvTWI_Init();
 	lcd_inicio();
+	MXC4005XC_init(); //debug new
+	//bg95_On();
+	bg95_Init();
 	
 	cntTM = 0;
 	cntTE = 0;
-	estado = dormido; //debug
+	estado = dormido;
 	
 	u8 u8Reg;
 	u8Reg = PMCR | (WDT_WCLKS << 4);
@@ -95,6 +78,7 @@ int main(void)
 	asm("wdr");//__watchdog_reset();
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
 	WDTCSR =  0b11000100; // wdif - wdie - wdp3 - wdce - wde - wpd2 - wdp1 - wpd0
+	//SEI();
 	SMCR = 0x05; // modo = power down, habilita sleep
 	
 	DDRB = 0xff; // prende un led o...
@@ -107,20 +91,20 @@ int main(void)
 	
 	sei();
 	
-	asm("cli");
-	clear();
-	lcdSendStr("BALATRON");
-	//_delay_ms(1000);
-	asm("sei");
+	//TEST:
+	DrvUSART_SendStr("AT+QGPSEND\r");
+	DrvUSART_SendStr("ATE1\r");
+	u8 valor = LeeMXC4005XC_NI(MXC4005XC_REG_DEVICE_ID); //debug new default in this reg=0x02 
+	if(valor == 0x02){
+		DrvUSART_SendStr("AT+QGPS=1\r");
+	}
+	else{
+		DrvUSART_SendStr("ATE0\r"); //echo off
+	}
 	
-	bg95_On();
-	Module_Init();
-	DrvUSART_SendStr("AT+QGPS=1\r");
 	while (1)
 	{
-		computeStateMachine();
-		//float data[4] = {0};  // unit: g
-		//MXC4005XC_GetData(data);
-		//print_Buffer(data, sizeof(data));
+		//computeStateMachine();
+		
 	}
 }

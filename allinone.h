@@ -19,7 +19,7 @@
 #include "DrvUSART.h"
 #include "DrvTWI.h"
 #include "DrvWDT.h"
-#include "lcdi2c.h" //DEBUG
+#include "lcdi2c.h"
 #include "state_machine.h"
 #include "MXC4005XC.h"
 
