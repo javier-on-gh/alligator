@@ -24,20 +24,12 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 #include <avr/wdt.h>
-#include <util/delay.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-#include <stdio.h>
-#include <stddef.h>
 
 extern void init_modules(void);
-
 char *MESSAGE;
-extern char rxBuffer[128];
-extern char txBuffer[128];
 
-int cntTM, cntTE;
+int cntTM = 0;
+int cntTE = 0;
 ISR(WDT_vect)
 {
 	WDTCSR |= (1<<WDIF); // Borra bandera
@@ -45,11 +37,13 @@ ISR(WDT_vect)
 	cntTM++;
 	if (cntTM==10)//(cntTM==113) // Muestrea sensores cada hora
 	{
+		//mqtt_pub_int("josepamb/feeds/bg95-mqtt-test-1", cntTM);
 		cntTM = 0;
 		estado = muestreo;
 	} 
-	if (cntTE==16)//2700) // Actualiza la nube cada 24 horas
+	if (cntTE==20)//2700) // Actualiza la nube cada 24 horas //debug new
 	{
+		//mqtt_pub_int("josepamb/feeds/bg95-mqtt-test-1", cntTE);
 		cntTE = 0;
 		estado = envio;
 	}
@@ -60,10 +54,7 @@ int main(void)
 	DrvSYS_Init();
 	DrvUSART_Init();
 	DrvTWI_Init();
-	lcd_inicio();
-	MXC4005XC_init(); //debug new
-	//bg95_On();
-	bg95_Init();
+	//MXC4005XC_init(); //debug new
 	
 	cntTM = 0;
 	cntTE = 0;
@@ -78,7 +69,7 @@ int main(void)
 	asm("wdr");//__watchdog_reset();
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
 	WDTCSR =  0b11000100; // wdif - wdie - wdp3 - wdce - wde - wpd2 - wdp1 - wpd0
-	//SEI();
+	SEI();
 	SMCR = 0x05; // modo = power down, habilita sleep
 	
 	DDRB = 0xff; // prende un led o...
@@ -88,23 +79,17 @@ int main(void)
 	DDRD |= (0x01<<PORTD1);
 	PORTD = 0x02;
 	DDRC |= (1 << PORTC3); //POWER PORT
+			
+	//bg95_On(); //debug new
+	bg95_Init();
 	
-	sei();
-	
-	//TEST:
-	DrvUSART_SendStr("AT+QGPSEND\r");
-	DrvUSART_SendStr("ATE1\r");
-	u8 valor = LeeMXC4005XC_NI(MXC4005XC_REG_DEVICE_ID); //debug new default in this reg=0x02 
-	if(valor == 0x02){
-		DrvUSART_SendStr("AT+QGPS=1\r");
-	}
-	else{
-		DrvUSART_SendStr("ATE0\r"); //echo off
-	}
-	
+	//mqtt_init();
+	//mqtt_connect();
+	mqtt_pub_str("josepamb/feeds/welcome-feed", "------INICIA PRUEBA--------");
+	//mqtt_disconnect();
 	while (1)
 	{
-		//computeStateMachine();
-		
+		//computeStateMachine(estado);
+		computeStateMachine_fake();
 	}
 }

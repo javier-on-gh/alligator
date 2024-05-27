@@ -91,7 +91,7 @@
 	void noAutoscroll();
 
 	void setCursor(uint8_t, uint8_t);
-	void command(uint8_t);
+	void lcdcommand(uint8_t);
 
 
 	////compatibility API function aliases

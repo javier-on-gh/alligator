@@ -14,12 +14,12 @@
 
 /********** high level commands, for the user! */
 void clear(){
-	command(LCD_CLEARDISPLAY);// clear display, set cursor position to zero
+	lcdcommand(LCD_CLEARDISPLAY);// clear display, set cursor position to zero
 	_delay_ms(2);  // this command takes a long time!
 }
 
 void home(){
-	command(LCD_RETURNHOME);  // set cursor position to zero
+	lcdcommand(LCD_RETURNHOME);  // set cursor position to zero
 	_delay_ms(2);//delayMicroseconds(2000);  // this command takes a long time!
 }
 
@@ -31,69 +31,69 @@ void setCursor(uint8_t col, uint8_t row){
 	if ( col > 15 ) {
 		col = 0;    // we count rows starting w/0
 	}
-	command(LCD_SETDDRAMADDR | (col + row_offsets[row]));
+	lcdcommand(LCD_SETDDRAMADDR | (col + row_offsets[row]));
 }
 
 // Turn the display on/off (quickly)
 void noDisplay() {
 	_displaycontrol &= ~LCD_DISPLAYON;
-	command(LCD_DISPLAYCONTROL | _displaycontrol);
+	lcdcommand(LCD_DISPLAYCONTROL | _displaycontrol);
 }
 void display() {
 	_displaycontrol |= LCD_DISPLAYON;
-	command(LCD_DISPLAYCONTROL | _displaycontrol);
+	lcdcommand(LCD_DISPLAYCONTROL | _displaycontrol);
 }
 
 // Turns the underline cursor on/off
 void noCursor() {
 	_displaycontrol &= ~LCD_CURSORON;
-	command(LCD_DISPLAYCONTROL | _displaycontrol);
+	lcdcommand(LCD_DISPLAYCONTROL | _displaycontrol);
 }
 void cursor() {
 	_displaycontrol |= LCD_CURSORON;
-	command(LCD_DISPLAYCONTROL | _displaycontrol);
+	lcdcommand(LCD_DISPLAYCONTROL | _displaycontrol);
 }
 
 // Turn on and off the blinking cursor
 void noBlink() {
 	_displaycontrol &= ~LCD_BLINKON;
-	command(LCD_DISPLAYCONTROL | _displaycontrol);
+	lcdcommand(LCD_DISPLAYCONTROL | _displaycontrol);
 }
 void blink() {
 	_displaycontrol |= LCD_BLINKON;
-	command(LCD_DISPLAYCONTROL | _displaycontrol);
+	lcdcommand(LCD_DISPLAYCONTROL | _displaycontrol);
 }
 
 // These commands scroll the display without changing the RAM
 void scrollDisplayLeft(void) {
-	command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVELEFT);
+	lcdcommand(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVELEFT);
 }
 void scrollDisplayRight(void) {
-	command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVERIGHT);
+	lcdcommand(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVERIGHT);
 }
 
 // This is for text that flows Left to Right
 void leftToRight(void) {
 	_displaymode |= LCD_ENTRYLEFT;
-	command(LCD_ENTRYMODESET | _displaymode);
+	lcdcommand(LCD_ENTRYMODESET | _displaymode);
 }
 
 // This is for text that flows Right to Left
 void rightToLeft(void) {
 	_displaymode &= ~LCD_ENTRYLEFT;
-	command(LCD_ENTRYMODESET | _displaymode);
+	lcdcommand(LCD_ENTRYMODESET | _displaymode);
 }
 
 // This will 'right justify' text from the cursor
 void autoscroll(void) {
 	_displaymode |= LCD_ENTRYSHIFTINCREMENT;
-	command(LCD_ENTRYMODESET | _displaymode);
+	lcdcommand(LCD_ENTRYMODESET | _displaymode);
 }
 
 // This will 'left justify' text from the cursor
 void noAutoscroll(void) {
 	_displaymode &= ~LCD_ENTRYSHIFTINCREMENT;
-	command(LCD_ENTRYMODESET | _displaymode);
+	lcdcommand(LCD_ENTRYMODESET | _displaymode);
 }
 
 // Turn the (optional) backlight off/on
@@ -109,7 +109,7 @@ void backlight(void) {
 
 /*********** mid level commands, for sending data/cmds */
 
-inline void command(uint8_t value) {
+inline void lcdcommand(uint8_t value) {
 	send(value, 0);
 }
 

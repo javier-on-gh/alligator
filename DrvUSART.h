@@ -1,10 +1,7 @@
 #ifndef _USART_H_
 #define _USART_H_
 
-#include <stddef.h>
 #include <avr/interrupt.h>
-#include <avr/io.h>
-#include <stdbool.h>
 
 #define E_UMSEL0_UART	0	/**< Asynchronous USART */
 #define E_UMSEL0_USRT	1	/**< Synchronous USART */
@@ -50,6 +47,7 @@ void DrvUSART_SendStr(char* str);
 u8 DrvUSART_GetChar(void);
 void DrvUSART_GetString(void);
 void processData(char *, size_t);
+void processData_wait(char *buff, size_t buffsize, int timeout_ms);
 
 void appendSerial(char);
 void serialWrite(char *);

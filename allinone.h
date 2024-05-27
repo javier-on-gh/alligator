@@ -10,6 +10,14 @@
 #endif
 
 #include <avr/io.h>
+#include <util/delay.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
 #include "global.h"
 #include "macros_auto.h"
 #include "lgt8f328p_spec.h"
@@ -22,5 +30,7 @@
 #include "lcdi2c.h"
 #include "state_machine.h"
 #include "MXC4005XC.h"
+#include "bg95_mqtt.h"
+#include "error_handling.h"
 
 #endif // __ALLIONONE_H__

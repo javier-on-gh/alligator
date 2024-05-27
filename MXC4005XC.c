@@ -5,8 +5,6 @@
  *  Author: JPMB
  */
 #include "allinone.h"
-#include "MXC4005XC.h"
-#include <util/delay.h>
 
 ISR(INT0_vect){
 	//interrupcion de acelerometro INT pin
@@ -86,7 +84,7 @@ u8 LeeMXC4005XC_NI(u8 regAddr){
 ** GET ALL DATA FUNCTIONS: DEBUG MAKE STATIC????
 *****************************************
 */
-//Should work: Stores useful sensor data
+//Should work: Stores all useful sensor data
 void MXC4005XC_GetData_real(float *data)
 {
 	uint8_t data_reg[7] = {0}; // data buffer
@@ -97,7 +95,10 @@ void MXC4005XC_GetData_real(float *data)
 		data[i] = (float)((int16_t)(data_reg[i*2]<<8 | data_reg[i*2 + 1]) >> 4);
 		data[i] /= MXC4005XC_2G_SENSITIVITY; // convert acceleration to g
 	}
-	data[3] = (float)data_reg[6] * MXC4005XC_T_SENSITIVITY + MXC4005XC_T_ZERO; // convert to Celsius
+	//debug TRY:
+	//int8_t val = (int8_t)data[3]; // cast into signed 8 bit int
+	//float temp = MXC4005XC_T_ZERO - (float)val * MXC4005XC_T_SENSITIVITY;
+	data[3] = (float)data_reg[6] * MXC4005XC_T_SENSITIVITY + MXC4005XC_T_ZERO; // convert to Celsius //DEBUG compare to get temperature
 }
 
 //debug??
@@ -143,9 +144,14 @@ float MXC4005XC_Get_Temperature(void)
 	/*MXC400xXC contains an on-chip temperature sensor whose output can be read through the I2C
 	interface. The output is in 2's complement format. The nominal value of TOUT[7:0] is 0 at a 
 	temperature of 25°C, and the sensitivity of the output is approximately 0.586°C/LSB.
-	*/
-	u8 val = LeeMXC4005XC_NI(MXC4005_REG_TOUT);
-	float temp = (float)val * MXC4005XC_T_SENSITIVITY + MXC4005XC_T_ZERO; //casting to convert to float
+	*/	
+	
+	u8 raw_data = LeeMXC4005XC_NI(MXC4005_REG_TOUT);
+	//mqtt(raw_data); // DEBUG: publish raw register readings to mqtt for debugging:
+	int8_t val = (int8_t)raw_data; // cast into signed 8 bit int
+	//mqtt(val); // DEBUG: publish cast value for debugging:
+	// redundant: //val = ~val + 1; // re-apply 2's complement because response comes in that format
+	float temp = MXC4005XC_T_ZERO - (float)val * MXC4005XC_T_SENSITIVITY; //DEBUG sensitivity
 	return temp;
 }
 

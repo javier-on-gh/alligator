@@ -11,18 +11,19 @@
 // Definicion de la variable estado
 enum state {dormido, muestreo, envio, movimiento} estado;
 
-void computeStateMachine(void);
+void computeStateMachine(enum state estado);
 int toggleValue(int);
-void sendATCommands(char *);
-void iluminacion(void);
-void temperatura(void);
-void GPS(void);
-void TRY_COMMAND(char *, char *, size_t);
-bool handle_Response(char *, size_t);
-bool handleErrorCode(char *, size_t);
-void print_Buffer(char *, size_t);
-
+u16 iluminacion(void);
 void bg95_On(void);
 void bg95_Init(void);
+
+void sendATCommands(char *);
+void GPS(void);
+void TRY_COMMAND(char *, char *, size_t);
+bool handleResponse(char *, size_t);
+bool handleError(char *, size_t);
+
+void print_mqtt(char *);
+void computeStateMachine_fake(void);
 
 #endif /* STATE_MACHINE_H_ */

@@ -4,7 +4,7 @@
  * Created: 07/05/2024 01:10:27 p. m.
  *  Author: JPMB
  */ 
-#include <stdint.h>
+#include <avr/interrupt.h>
 
 #define MXC4005XC_ADDRESS           0x15 // Part number: MXC4005XC. 5 indicates address 0x15
 
@@ -57,3 +57,5 @@ void EscribeMXC4005XC_NI(u8 regAddr, u8 data);
 // data[3]    is the temperature, unit is degree Celsius
 void MXC4005XC_GetData_test(float *data); //debug cambiar por char?
 void MXC4005XC_GetData_real(float *data);
+
+float MXC4005XC_Get_Temperature(void);
