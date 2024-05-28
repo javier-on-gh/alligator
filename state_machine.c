@@ -11,20 +11,17 @@
 
 #include "allinone.h"
 
-//enum state estado = dormido; //start state
 bool bg95_on = false;
 bool mqtt_connected = false;
 int toggle = 0; //puede servir como bandera toggle 0 o 1
 
-char TIME[128] = {0};
 char TEMP[128] = {0};
 char COORDS[128] = {0};
 float ACCEL_BUFF[4] = {0}; //accelerometer buffer //debug cambiar por char?
 u16 light;
 float temper;
 
-extern char lastCommand[50];
-extern char SUDDEN_RESPONSE[128];
+extern char lastCommand[20];
 
 ERROR errorActions[] = { //ERROR codes handling
 	//CME ERROR CODES
@@ -68,33 +65,49 @@ void computeStateMachine_fake(void) {
 	switch(estado)
 	{
 		case dormido:
-		//mqtt_pub_str("josepamb/feeds/welcome-feed", "dormido");
+			//mqtt_pub_str("josepamb/feeds/welcome-feed", "dormido");
 			break;
 		
 		case muestreo:
-			mqtt_pub_str("josepamb/feeds/welcome-feed", "muestreo");
+			//mqtt_pub_str("josepamb/feeds/welcome-feed", "muestreo");
 			
-			light = 0x3039; //12345d
-			temper = 32.5;
+			ACCEL_BUFF[0] = 1.23;	ACCEL_BUFF[1] = 22.34;
+			ACCEL_BUFF[2] = 33.45;	ACCEL_BUFF[3] = 44.56;
+			light = 0x0001; //12345d
+			temper = 0.27;
 			sprintf(COORDS, "nothing stored :(");
 			
 			estado = dormido;
 			break;
 		
 		case envio: //mandar a la nube
-			//mqtt_pub_str("josepamb/feeds/welcome-feed", "envio");	
-			//_delay_ms(3000);
+			mqtt_init();
+			mqtt_connect();
+			mqtt_pub_str("josepamb/feeds/welcome-feed", "__ START __");
+			_delay_ms(2000);
 			mqtt_pub_float("josepamb/feeds/beacon.temperature", temper); //send temperature (float)
-			_delay_ms(3000);
+			_delay_ms(2000);
 			mqtt_pub_unsigned_short("josepamb/feeds/beacon.light", light); //send light data (uint16_t or unsigned short)
+			_delay_ms(2000);
+			mqtt_pub_str("josepamb/feeds/beacon.gps", COORDS); //send GPS buffer (string)
+			_delay_ms(2000);
+			//mqtt_pub_float("josepamb/feeds/beacon.x", ACCEL_BUFF[0]); //floats
 			//_delay_ms(3000);
-			//mqtt_pub_str("josepamb/feeds/beacon.gps", COORDS); //send GPS buffer (string)
+			//mqtt_pub_float("josepamb/feeds/beacon.y", ACCEL_BUFF[1]);
+			//_delay_ms(3000);
+			//mqtt_pub_float("josepamb/feeds/beacon.z", ACCEL_BUFF[2]);
+			//_delay_ms(3000);
+			//mqtt_pub_float("josepamb/feeds/beacon.temperature", ACCEL_BUFF[3]);
+			//_delay_ms(3000);
+			
+			mqtt_pub_str("josepamb/feeds/welcome-feed", "__ DONE__ ");
+			mqtt_disconnect();
 			
 			estado = dormido;
 			break;
 		
 		case movimiento:
-			mqtt_pub_str("josepamb/feeds/welcome-feed", "movimiento");
+			//mqtt_pub_str("josepamb/feeds/welcome-feed", "movimiento");
 			estado = envio;
 			break;
 		
@@ -106,8 +119,8 @@ void computeStateMachine_fake(void) {
 	asm("nop");
 	asm("nop");
 }
-/*
-void computeStateMachine(enum state estado) {
+
+void computeStateMachine(void) {
 	switch(estado)
 	{
 		case dormido:
@@ -144,7 +157,7 @@ void computeStateMachine(enum state estado) {
 			
 			//mqtt_pub_str("josepamb/feeds/bg95-mqtt-test-1", "This is a test!");
 			mqtt_pub_unsigned_short("josepamb/feeds/beacon.light", light); //send light data (uint16_t or unsigned short)
-			mqtt_pub_float("josepamb/feeds/beacon.temperature", temperature); //send temperature (float)
+			mqtt_pub_float("josepamb/feeds/beacon.temperature", temper); //send temperature (float)
 			mqtt_pub_str("josepamb/feeds/beacon.gps", COORDS); //send GPS buffer (string)
 			
 			//TODO: publish all buffers to respective topic, etc.
@@ -194,12 +207,12 @@ void computeStateMachine(enum state estado) {
 	asm("nop");
 	asm("nop");
 }
-*/
+
 int toggleValue(int tog){ //Puede servir como bandera de toggle 0 o 1
 	return tog ^= 1;
 }
 
-u16 iluminacion(){
+u16 iluminacion(void){
 	// Lee la iluminacion ambiental dentro del equipo (ADC6 <- ALS-PT19)
 	u16 luz;
 	PORTB |= (1<<PORTB5); //Energiza ALS-PT19
@@ -218,7 +231,7 @@ u16 iluminacion(){
 	return luz;
 }
 
-void bg95_On(){
+void bg95_On(void){
 	PORTC |= (1 << PORTC3);
 	_delay_ms(600);
 	PORTC &= ~(1 << PORTC3);
@@ -230,7 +243,7 @@ void bg95_Init(void){
 	//bg95_On(); //encender (ya está en main.c)
 	//sendATCommands("AT");
 	sendATCommands("ATE0"); //Desactivar el eco
-	//TRY_COMMAND("AT+QLTS=2", TIME, sizeof(TIME)); // hora actual y guardar en TIME
+	//TRY_COMMAND("AT+QLTS=2", TEMP, sizeof(TEMP)); // hora actual y guardar en TEMP
 	//// Turn on full cellular functionality
 	//sendATCommands("AT+CFUN=1");
 	//// Check the received signal strength
@@ -250,11 +263,11 @@ void bg95_Init(void){
 
 void sendATCommands(char *msg) {
 	DrvUSART_SendStr(msg);
-	//processData(TEMP, sizeof(TEMP));
+	processData(TEMP, sizeof(TEMP));
 	//processData_wait(TEMP, sizeof(TEMP), 10000); // debug
 }
 
-void GPS() {
+void GPS(void) {
 	//TODO change to quecconect
 	TRY_COMMAND("AT+QGPS=1", TEMP, sizeof(TEMP)); // Turn on GPS
 	TRY_COMMAND("AT+QGPSLOC?", COORDS, sizeof(COORDS)); // Get coords
@@ -323,10 +336,10 @@ bool handleError(char *buffer, size_t buffersize) {
 		}
 	}
 	else if(urcptr != NULL){ //mqtt URCs
-		int errorCode = atoi(urcptr + strlen("QMTSTAT: 0,"));
+		int errorCode = atoi(urcptr + strlen("QMTSTAT: 0,")); //obtain error code
 		for (size_t i = 0; i < sizeof(mqttURCsActions) / sizeof(mqttURCsActions[0]); i++) {
 			if (mqttURCsActions[i].code == errorCode) {
-				return mqttURCsActions[i].action(); //handle specifici error code
+				return mqttURCsActions[i].action(); //handle specific error code
 			}
 		}
 	}

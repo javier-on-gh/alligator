@@ -8,9 +8,8 @@
 #include "allinone.h"
 #include "error_handling.h"
 
-extern char lastCommand[50];
+extern char lastCommand[20];
 extern char TEMP[128];
-extern char SUDDEN_RESPONSE[128];
 
 bool handleMoveOn(void){return true;}
 
@@ -28,7 +27,7 @@ bool handleNoErrorCode(void){
 			return true; //TODO: handle here debug
 		}
 		if (strstr(lastCommand, "AT+QMTCONN") != NULL){
-			// No connection!
+			// already connected
 			return true; //TODO: handle here debug
 		}
 		else{
@@ -57,13 +56,13 @@ bool handlemqttconnection(char *buffer, size_t buffersize){
 		}
 		else if(strstr(buffer, "+QMTOPEN: 0,-1")){
 			// -1 Failed to open network
-			//sendATCommands("AT+QMTCLOSE=0");
-			//sendATCommands("AT+QMTDISC=0");
+			//DrvUSART_SendStr("AT+QMTCLOSE=0");
+			//DrvUSART_SendStr("AT+QMTDISC=0");
 			return false; // handle here
 		}
 		else if(strstr(buffer, "+QMTOPEN: 0,2")){
 			// 2 MQTT client identifier is occupied
-			sendATCommands("AT+QIDEACT=1");
+			DrvUSART_SendStr("AT+QIDEACT=1");
 			return false; // try again
 		}
 		else if(strstr(buffer, "+QMTOPEN: 0,3")){
@@ -80,16 +79,17 @@ bool handlemqttconnection(char *buffer, size_t buffersize){
 			return true;
 		}
 		else if(strstr(buffer, "+QMTCONN: 0,1")){
-			//sendATCommands("AT+QMTDISC=0");
-			//sendATCommands("AT+QMTOPEN=0,\"io.adafruit.com\",8883");
+			//MQTT is initializing
+			//DrvUSART_SendStr("AT+QMTDISC=0");
+			//DrvUSART_SendStr("AT+QMTOPEN=0,\"io.adafruit.com\",8883");
 			//_delay_ms(5000);
-			//sendATCommands("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"aio_tdIm42ew8HpTRg560TvSnJFGfV0w\"");
+			//DrvUSART_SendStr("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"");
 			//TODO: recall mqtt init and open and connect
 			return true; // debug handle here maybe restart module?
 		}
 		else if(strstr(buffer, "+QMTCONN: 0,4")){
 			// MQTT is Disconnecting
-			// sendATCommands("AT+QIDEACT=1");
+			// DrvUSART_SendStr("AT+QIDEACT=1");
 			//TODO: recall mqtt init and open and connect
 			return true; // debug handle here maybe restart module?
 		}
@@ -103,6 +103,6 @@ bool handlemqttconnection(char *buffer, size_t buffersize){
 		return handleError(buffer, buffersize);
 	}
 	
-	//connected successfully
+	//connected successfully. NOTE: wont enter here if successful
 	return true;
 }

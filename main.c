@@ -26,7 +26,6 @@
 #include <avr/wdt.h>
 
 extern void init_modules(void);
-char *MESSAGE;
 
 int cntTM = 0;
 int cntTE = 0;
@@ -35,17 +34,19 @@ ISR(WDT_vect)
 	WDTCSR |= (1<<WDIF); // Borra bandera
 	cntTE++;
 	cntTM++;
-	if (cntTM==10)//(cntTM==113) // Muestrea sensores cada hora
-	{
-		//mqtt_pub_int("josepamb/feeds/bg95-mqtt-test-1", cntTM);
-		cntTM = 0;
-		estado = muestreo;
-	} 
-	if (cntTE==20)//2700) // Actualiza la nube cada 24 horas //debug new
+	
+	if (cntTE==16)//2700) // Actualiza la nube cada 24 horas //debug new
 	{
 		//mqtt_pub_int("josepamb/feeds/bg95-mqtt-test-1", cntTE);
 		cntTE = 0;
 		estado = envio;
+	}
+	//else if gives priority to the first conditional (envio)
+	else if (cntTM==10)//(cntTM==113) // Muestrea sensores cada hora
+	{
+		//mqtt_pub_int("josepamb/feeds/bg95-mqtt-test-1", cntTM);
+		cntTM = 0;
+		estado = muestreo;
 	}
 }
 
@@ -70,6 +71,7 @@ int main(void)
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
 	WDTCSR =  0b11000100; // wdif - wdie - wdp3 - wdce - wde - wpd2 - wdp1 - wpd0
 	SEI();
+	
 	SMCR = 0x05; // modo = power down, habilita sleep
 	
 	DDRB = 0xff; // prende un led o...
@@ -85,7 +87,9 @@ int main(void)
 	
 	//mqtt_init();
 	//mqtt_connect();
-	mqtt_pub_str("josepamb/feeds/welcome-feed", "------INICIA PRUEBA--------");
+	//mqtt_pub_str("josepamb/feeds/welcome-feed", "------INICIA PRUEBA--------");
+	//_delay_ms(3000);
+	
 	//mqtt_disconnect();
 	while (1)
 	{

@@ -14,15 +14,13 @@
 
 #define USART_TXREN ((USART_RXEN << 4) | (USART_TXEN << 3))
 
-char lastCommand[50];
+char lastCommand[20];
 
 //////// INTERRUPTIONS ////////
 #define BUFFER_SIZE 128
 char rxBuffer[BUFFER_SIZE];
-uint8_t rxReadPos = 0;
-uint8_t rxWritePos = 0;
-
-char SUDDEN_RESPONSE[128] = {0};
+volatile uint8_t rxReadPos = 0;
+volatile uint8_t rxWritePos = 0;
 
 ISR(USART_RX_vect) {
 	rxBuffer[rxWritePos] = UDR0;
@@ -31,13 +29,13 @@ ISR(USART_RX_vect) {
 }
 
 char txBuffer[BUFFER_SIZE];
-uint8_t txReadPos = 0;
-uint8_t txWritePos = 0;
+volatile uint8_t txReadPos = 0;
+volatile uint8_t txWritePos = 0;
 
 ISR(USART_TX_vect) {
 	//if(txReadPos != txWritePos) {
-	//UDR0 = txBuffer[txReadPos];
-	//txReadPos = (txReadPos + 1) % BUFFER_SIZE;
+		//UDR0 = txBuffer[txReadPos];
+		//txReadPos = (txReadPos + 1) % BUFFER_SIZE;
 	//}
 }
 
@@ -79,7 +77,7 @@ void DrvUSART_SendStr(char *str) {
 	}
 	DrvUSART_SendChar('\r'); //SEND TERMINATING CHARACTER TO BG95
 	
-	strcpy(lastCommand, str);
+	snprintf(lastCommand, sizeof(lastCommand), "%s", str);
 	
 	_delay_ms(100); //IMPORTANT (cambiar por interrupcion TXC)
 }
@@ -166,8 +164,8 @@ void processData_wait(char *buff, size_t buffsize, int timeout_ms) {
 	int elapsed_time = 0;
 	// Wait until data available or timeout
 	while (rxReadPos == rxWritePos && elapsed_time < timeout_ms) {
-		//_delay_ms(100); // delay to avoid busy-waiting //DEBUG!!!
-		elapsed_time += 10; // Update elapsed time
+		_delay_ms(100); // delay to avoid busy-waiting //DEBUG!!!
+		elapsed_time += 100; // Update elapsed time
 	}
 	
 	while (rxReadPos != rxWritePos && i < buffsize - 1) {
@@ -189,17 +187,18 @@ void processData_wait(char *buff, size_t buffsize, int timeout_ms) {
 }
 
 // FOR TXC INTERRUPT
-void appendSerial(char c)
-{
+void appendSerial(char c) {
 	txBuffer[txWritePos] = c;
 	txWritePos = (txWritePos + 1) % BUFFER_SIZE;
 }
 
-void serialWrite(char *c) {
-	for(uint8_t i = 0; i < strlen(c); i++) {
-		appendSerial(c[i]);
+void serialWrite(char *str) {
+	for(uint8_t i = 0; i < strlen(str); i++) {
+		appendSerial(str[i]);
 	}
+	appendSerial('\r');
 	if(UCSR0A & (1 << UDRE0)) {
 		UDR0 = 0; //dummy byte to trigger ISR
 	}
+	snprintf(lastCommand, sizeof(lastCommand), "%s", str);
 }

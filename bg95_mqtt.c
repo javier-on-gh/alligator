@@ -13,12 +13,12 @@ extern float ACCEL_BUFF[4];
 
 //// ** REAL CLOUD ** //
 //#define IO_USERNAME  "_jahh"
-//#define IO_KEY		 "aio_etZh60WvMMgkD2vDRqlFmIGdaddq"
+//#define IO_KEY		 ""
 //const char *clientID = "bg95";
 //const char *topic = "_jahh/f/Luz";
 
 // ** TESTING CLOUD ** //
-#define IO_USERNAME  ""
+#define IO_USERNAME  "josepamb"
 #define IO_KEY       ""
 const char *topic = "josepamb/feeds/bg95-mqtt-test-1";
 const char *clientID = "bg95";
@@ -29,7 +29,8 @@ const int sslcontextid = 0;
 const char *brokerAddress = "io.adafruit.com";
 const int brokerPort = 1883;  // MQTT default port, use 8883 for SSL
 const int brokerPortSSL = 8883;
-char ATcommand[256];  // temporary buffer to hold ATcommand
+#define COMMAND_BUFF_SIZE 128
+char ATcommand[COMMAND_BUFF_SIZE];  // temporary buffer to hold ATcommand
 
 extern char TEMP[128];
 
@@ -60,30 +61,33 @@ void mqtt_init(void){
 	//TRY_COMMAND("AT+QIACT?", TEMP, sizeof(TEMP));
 	
 	//SSL authentication version AT+QSSLCFG="sslversion",0,4
-	sendATCommands("AT+QSSLCFG=\"sslversion\",0,4");
+	DrvUSART_SendStr("AT+QSSLCFG=\"sslversion\",0,4");
 	//Cipher suite AT+QSSLCFG="ciphersuite",0,0XFFFF
-	sendATCommands("AT+QSSLCFG=\"ciphersuite\",0,0XFFFF");
+	DrvUSART_SendStr("AT+QSSLCFG=\"ciphersuite\",0,0XFFFF");
 	//Configure the authentication mode for SSL context 0. (ignore for now)
 	//AT+QSSLCFG="seclevel",0,0
-	sendATCommands("AT+QSSLCFG=\"seclevel\",0,0");
+	DrvUSART_SendStr("AT+QSSLCFG=\"seclevel\",0,0");
 	//Ignore the time of authentication. AT+QSSLCFG="ignorelocaltime",0,1
-	sendATCommands("AT+QSSLCFG=\"ignorelocaltime\",0,1");
+	DrvUSART_SendStr("AT+QSSLCFG=\"ignorelocaltime\",0,1");
 	
 	////AT+QMTCFG="pdpcid",<client_idx>[,<cid>] AT+QMTCFG="pdpcid",0,1
-	sendATCommands("AT+QMTCFG=\"pdpcid\",0,1");
+	DrvUSART_SendStr("AT+QMTCFG=\"pdpcid\",0,1");
 	//AT+QMTCFG="ssl",<client_idx>[,<SSL_enable>[,<ctx_index>]] AT+QMTCFG="ssl",0,1,0
-	sendATCommands("AT+QMTCFG=\"ssl\",0,1,0");
+	DrvUSART_SendStr("AT+QMTCFG=\"ssl\",0,1,0");
 }
 
 void mqtt_connect(void){	
-	/// Open the client
+	//----- Open the client
 	TRY_COMMAND("AT+QMTOPEN=0,\"io.adafruit.com\",8883", TEMP, sizeof(TEMP));
+	//DrvUSART_SendStr("AT+QMTOPEN=0,\"io.adafruit.com\",8883");
+	
 	//sendATCommands("AT+QMTOPEN?"); //to check if its connected
 	
-	// Connect to the client
-	TRY_COMMAND("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"aio_tdIm42ew8HpTRg560TvSnJFGfV0w\"", TEMP, sizeof(TEMP));
-	//sendATCommands("AT+QMTCONN?");
+	//----- Connect to the client
+	TRY_COMMAND("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"", TEMP, sizeof(TEMP));
+	//DrvUSART_SendStr("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"");
 	
+	//sendATCommands("AT+QMTCONN?");
 	//if(strstr(TEMP, "+QMTCONN: 0,0,0") == NULL){
 		//sendATCommands("AT+QMTCLOSE=0");
 		//sendATCommands("AT+QMTDISC=0");
@@ -108,23 +112,25 @@ void mqtt_read(void){
 //-----Publishing messages----
 //AT+QMTPUB=<client_idx>,<msgID>,<qos>,<retain>,<topic>
 //debug try msgID = 1, qos = 1 or msgID = 0, qos = 0
+
+//NOTE: message should be short!!!
 void mqtt_pub_str(const char *topic, const char *message){
-	sprintf(ATcommand, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%s\"", topic, message);
-	//sendATCommands(ATcommand);
-	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
+	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%s\"", topic, message);
+	DrvUSART_SendStr(ATcommand);
+	//TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
 void mqtt_pub_char(const char *topic, const char message){
-	sprintf(ATcommand, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%x\"", topic, message);
-	sendATCommands(ATcommand);
+	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%x\"", topic, message);
+	DrvUSART_SendStr(ATcommand);
 }
-void mqtt_pub_unsigned_short(const char *topic, unsigned short message){
-	sprintf(ATcommand, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%x\"", topic, message);
-	sendATCommands(ATcommand);
+void mqtt_pub_unsigned_short(const char *topic, const unsigned short message){
+	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%x\"", topic, message);
+	DrvUSART_SendStr(ATcommand);
 	//TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
 void mqtt_pub_int(const char *topic, const int message){
-	sprintf(ATcommand, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%d\"", topic, message);
-	sendATCommands(ATcommand);
+	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%d\"", topic, message);
+	DrvUSART_SendStr(ATcommand);
 }
 void mqtt_pub_float(const char *topic, const float message){
 	////for some reason sprintf does not work here:
@@ -137,15 +143,17 @@ void mqtt_pub_float(const char *topic, const float message){
 	}
 	
 	//AT+QMTPUBEX=0,0,0,0,"josepamb/feeds/beacon.light","3039"
-	sprintf(ATcommand, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%d.%02d\"", topic, integer_part, fractional_part);
-	sendATCommands(ATcommand);
+	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%d.%02d\"", topic, integer_part, fractional_part);
+	DrvUSART_SendStr(ATcommand);
 	//TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
 
 //for observing acceleration data in cloud
+//call as: mqtt_pub_float_buffer(
 void mqtt_pub_float_buffer(const char *topic, float *message, size_t buffersize){
 	char *ptr = ATcommand;
-	ptr += sprintf(ptr, "AT+QMTPUBEX=0,0,0,0,\"%s\",\"", topic);
+	ptr += snprintf(ptr, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,0,0,0,\"%s\",\"", topic);
+
 	for (size_t i = 0; i < buffersize; i++) {
 		int integerPart = (int)message[i];
 		int fractionalPart = (int)((message[i] - integerPart) * 100);
@@ -154,20 +162,20 @@ void mqtt_pub_float_buffer(const char *topic, float *message, size_t buffersize)
 			fractionalPart = -fractionalPart;
 		}
 		
-		ptr += sprintf(ptr, "%d.%02d", integerPart, fractionalPart);
+		ptr += snprintf(ptr, COMMAND_BUFF_SIZE, "%d.%02d", integerPart, fractionalPart);
 		if (i < buffersize - 1) {
 			*ptr++ = ',';
 		}
 	}
 	*ptr++ = '\"';
 	*ptr = '\0';
-	sendATCommands(ATcommand);
+	DrvUSART_SendStr(ATcommand);
 }
 
 void mqtt_disconnect(void){
-	sendATCommands("AT+QMTCLOSE=0");
-	sendATCommands("AT+QMTDISC=0");
-	sendATCommands("AT+QIDEACT=1");
+	DrvUSART_SendStr("AT+QMTCLOSE=0");
+	DrvUSART_SendStr("AT+QMTDISC=0");
+	DrvUSART_SendStr("AT+QIDEACT=1");
 	
 	/*
 	//close everyting
@@ -175,9 +183,4 @@ void mqtt_disconnect(void){
 	TRY_COMMAND("AT+QSSLCLOSE=1,10?", TEMP, sizeof(TEMP));
 	TRY_COMMAND("AT+QIDEACT=1", TEMP, sizeof(TEMP));
 	*/
-}
-
-// -------- TCP -------- //
-void tcp_connect(void){
-	
 }

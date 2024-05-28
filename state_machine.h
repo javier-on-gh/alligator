@@ -11,7 +11,7 @@
 // Definicion de la variable estado
 enum state {dormido, muestreo, envio, movimiento} estado;
 
-void computeStateMachine(enum state estado);
+void computeStateMachine(void);
 int toggleValue(int);
 u16 iluminacion(void);
 void bg95_On(void);
