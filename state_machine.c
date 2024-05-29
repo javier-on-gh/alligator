@@ -20,6 +20,7 @@ char COORDS[128] = {0};
 float ACCEL_BUFF[4] = {0}; //accelerometer buffer //debug cambiar por char?
 u16 light;
 float temper;
+int puerta = 0;
 
 extern char lastCommand[20];
 
@@ -73,8 +74,8 @@ void computeStateMachine_fake(void) {
 			
 			ACCEL_BUFF[0] = 1.23;	ACCEL_BUFF[1] = 22.34;
 			ACCEL_BUFF[2] = 33.45;	ACCEL_BUFF[3] = 44.56;
-			light = 0x0001; //12345d
-			temper = 0.27;
+			light = 0x0064; //12345d
+			temper = -4.27;
 			sprintf(COORDS, "nothing stored :(");
 			
 			estado = dormido;
@@ -82,25 +83,30 @@ void computeStateMachine_fake(void) {
 		
 		case envio: //mandar a la nube
 			mqtt_init();
-			mqtt_connect();
-			mqtt_pub_str("josepamb/feeds/welcome-feed", "__ START __");
-			_delay_ms(2000);
-			mqtt_pub_float("josepamb/feeds/beacon.temperature", temper); //send temperature (float)
-			_delay_ms(2000);
-			mqtt_pub_unsigned_short("josepamb/feeds/beacon.light", light); //send light data (uint16_t or unsigned short)
-			_delay_ms(2000);
-			mqtt_pub_str("josepamb/feeds/beacon.gps", COORDS); //send GPS buffer (string)
-			_delay_ms(2000);
-			//mqtt_pub_float("josepamb/feeds/beacon.x", ACCEL_BUFF[0]); //floats
-			//_delay_ms(3000);
-			//mqtt_pub_float("josepamb/feeds/beacon.y", ACCEL_BUFF[1]);
-			//_delay_ms(3000);
-			//mqtt_pub_float("josepamb/feeds/beacon.z", ACCEL_BUFF[2]);
-			//_delay_ms(3000);
-			//mqtt_pub_float("josepamb/feeds/beacon.temperature", ACCEL_BUFF[3]);
-			//_delay_ms(3000);
-			
-			mqtt_pub_str("josepamb/feeds/welcome-feed", "__ DONE__ ");
+			if(mqtt_connect()){
+				mqtt_pub_str("josepamb/feeds/welcome-feed", "__ START __");
+				_delay_ms(1000);
+				mqtt_pub_float("josepamb/feeds/beacon.temperature", temper); //send temperature (float)
+				_delay_ms(1000);
+				mqtt_pub_unsigned_short("josepamb/feeds/beacon.light", light); //send light data (uint16_t or unsigned short)
+				_delay_ms(1000);
+				mqtt_pub_str("josepamb/feeds/beacon.gps", COORDS); //send GPS buffer (string)
+				_delay_ms(1000);
+				//mqtt_pub_float("josepamb/feeds/beacon.x", ACCEL_BUFF[0]); //floats
+				//_delay_ms(3000);
+				//mqtt_pub_float("josepamb/feeds/beacon.y", ACCEL_BUFF[1]);
+				//_delay_ms(3000);
+				//mqtt_pub_float("josepamb/feeds/beacon.z", ACCEL_BUFF[2]);
+				//_delay_ms(3000);
+				//mqtt_pub_float("josepamb/feeds/beacon.temperature", ACCEL_BUFF[3]);
+				//_delay_ms(3000);
+				mqtt_pub_str("josepamb/feeds/welcome-feed", "__ DONE__ ");
+			}
+			else{
+				//mqtt_disconnect();
+				//estado = envio;
+				//break;
+			}
 			mqtt_disconnect();
 			
 			estado = dormido;
@@ -193,6 +199,7 @@ void computeStateMachine(void) {
 			mqtt_disconnect(); //debug quitar de aqui todo lo de mqtt
 			
 			//TODO: ver si se abrio o cerro...
+			puerta++;
 			//contar las veces que se abrio
 			
 			//PORTB = 0x08;
@@ -277,7 +284,8 @@ void GPS(void) {
 }
 
 /* WORKS PERFECT: Try command and handle response */
-void TRY_COMMAND(char *command, char *buffer, size_t buffersize){
+bool TRY_COMMAND(char *command, char *buffer, size_t buffersize){
+	bool response;
 	int retries = 0;
 	int max_retries = 3;
 	int wait_time = 3000; //in ms
@@ -287,7 +295,7 @@ void TRY_COMMAND(char *command, char *buffer, size_t buffersize){
 		processData(buffer, buffersize); // guarda respuesta en buffer
 		//processData_wait(buffer, buffersize, 5000); //or wait_time
 		
-		bool response = handleResponse(buffer, buffersize);
+		response = handleResponse(buffer, buffersize);
 		if(response){
 			retries = 0;
 			break;
@@ -298,6 +306,7 @@ void TRY_COMMAND(char *command, char *buffer, size_t buffersize){
 	if(retries == max_retries){
 		sprintf(buffer, "nothing stored :("); //debugging for GPS buffer mostly when no fix
 	}
+	return response;
 }
 
 bool handleResponse(char *buffer, size_t buffersize) {

@@ -62,11 +62,13 @@ bool handlemqttconnection(char *buffer, size_t buffersize){
 		}
 		else if(strstr(buffer, "+QMTOPEN: 0,2")){
 			// 2 MQTT client identifier is occupied
+			DrvUSART_SendStr("AT+QMQTCLOSE=0");
 			DrvUSART_SendStr("AT+QIDEACT=1");
 			return false; // try again
 		}
 		else if(strstr(buffer, "+QMTOPEN: 0,3")){
 			// 3 Failed to activate PDP
+			//DrvUSART_SendStr("AT+QPOWD=1"); //debug
 			return true; //TODO: handle here debug
 		}
 		else{

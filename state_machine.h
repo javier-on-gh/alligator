@@ -19,7 +19,7 @@ void bg95_Init(void);
 
 void sendATCommands(char *);
 void GPS(void);
-void TRY_COMMAND(char *, char *, size_t);
+bool TRY_COMMAND(char *, char *, size_t);
 bool handleResponse(char *, size_t);
 bool handleError(char *, size_t);
 

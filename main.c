@@ -35,7 +35,7 @@ ISR(WDT_vect)
 	cntTE++;
 	cntTM++;
 	
-	if (cntTE==16)//2700) // Actualiza la nube cada 24 horas //debug new
+	if (cntTE==26)//2700) // Actualiza la nube cada 24 horas //debug new
 	{
 		//mqtt_pub_int("josepamb/feeds/bg95-mqtt-test-1", cntTE);
 		cntTE = 0;

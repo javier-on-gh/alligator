@@ -12,13 +12,13 @@ extern float ACCEL_BUFF[4];
 // -------- MQTT -------- //
 
 //// ** REAL CLOUD ** //
-//#define IO_USERNAME  "_jahh"
+//#define IO_USERNAME  ""
 //#define IO_KEY		 ""
 //const char *clientID = "bg95";
 //const char *topic = "_jahh/f/Luz";
 
 // ** TESTING CLOUD ** //
-#define IO_USERNAME  "josepamb"
+#define IO_USERNAME  ""
 #define IO_KEY       ""
 const char *topic = "josepamb/feeds/bg95-mqtt-test-1";
 const char *clientID = "bg95";
@@ -76,23 +76,25 @@ void mqtt_init(void){
 	DrvUSART_SendStr("AT+QMTCFG=\"ssl\",0,1,0");
 }
 
-void mqtt_connect(void){	
+bool mqtt_connect(void){
 	//----- Open the client
-	TRY_COMMAND("AT+QMTOPEN=0,\"io.adafruit.com\",8883", TEMP, sizeof(TEMP));
+	bool opened = TRY_COMMAND("AT+QMTOPEN=0,\"io.adafruit.com\",8883", TEMP, sizeof(TEMP));
 	//DrvUSART_SendStr("AT+QMTOPEN=0,\"io.adafruit.com\",8883");
 	
 	//sendATCommands("AT+QMTOPEN?"); //to check if its connected
-	
-	//----- Connect to the client
-	TRY_COMMAND("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"", TEMP, sizeof(TEMP));
-	//DrvUSART_SendStr("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"");
-	
+	if(opened){
+		return TRY_COMMAND("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"", TEMP, sizeof(TEMP));
+		//DrvUSART_SendStr("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"");
+	}
+	else{
+		return false;
+	}
 	//sendATCommands("AT+QMTCONN?");
 	//if(strstr(TEMP, "+QMTCONN: 0,0,0") == NULL){
-		//sendATCommands("AT+QMTCLOSE=0");
-		//sendATCommands("AT+QMTDISC=0");
-		//
-		////return false;
+	//sendATCommands("AT+QMTCLOSE=0");
+	//sendATCommands("AT+QMTDISC=0");
+	//
+	////return false;
 	//}
 }
 

@@ -10,7 +10,7 @@
 #define BG95_MQTT_H_
 
 void mqtt_init(void);
-void mqtt_connect(void);
+bool mqtt_connect(void);
 void mqtt_subscribe(const char *topic);
 void mqtt_read(void);
 void mqtt_pub_str(const char *topic, const char *message);
