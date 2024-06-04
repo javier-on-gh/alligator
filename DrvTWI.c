@@ -33,11 +33,11 @@
 
 // I2C state and address variables
 static volatile emTWIState twiState;
-static u8 DrvTWI_DeviceAddrRW;
+//static u8 DrvTWI_DeviceAddrRW; //debug cleaning
 // I2C transceiver data buffer
-static u8 DRVTWI_DATA_BUFFER[TWI_BUF_SIZE];
-static u8 u8TWI_BufferIndex;
-static u8 u8TWI_BufferLength;
+//static u8 DRVTWI_DATA_BUFFER[TWI_BUF_SIZE]; //debug cleaning
+//static u8 u8TWI_BufferIndex; //debug cleaning
+//static u8 u8TWI_BufferLength; //debug cleaning
 
 // function pointer to i2c receive routine
 //! DrvTWI_SlaveReceive is called when this processor

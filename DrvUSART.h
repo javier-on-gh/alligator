@@ -44,12 +44,11 @@ enum emUcpol0
 void DrvUSART_Init(void);
 void DrvUSART_SendChar(u8 u8Char);
 void DrvUSART_SendStr(char* str);
-u8 DrvUSART_GetChar(void);
-void DrvUSART_GetString(void);
+//u8 DrvUSART_GetChar(void); //debug cleaning
 void processData(char *, size_t);
 void processData_wait(char *buff, size_t buffsize, int timeout_ms);
 
-void appendSerial(char);
-void serialWrite(char *);
+//void appendSerial(char); //debug cleaning
+//void serialWrite(char *); //debug cleaning
 
 #endif

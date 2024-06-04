@@ -27,8 +27,8 @@
 
 extern void init_modules(void);
 
-int cntTM = 0;
-int cntTE = 0;
+volatile int cntTM = 0;
+volatile int cntTE = 0;
 ISR(WDT_vect)
 {
 	WDTCSR |= (1<<WDIF); // Borra bandera
@@ -37,14 +37,12 @@ ISR(WDT_vect)
 	
 	if (cntTE==26)//2700) // Actualiza la nube cada 24 horas //debug new
 	{
-		//mqtt_pub_int("josepamb/feeds/bg95-mqtt-test-1", cntTE);
 		cntTE = 0;
 		estado = envio;
 	}
 	//else if gives priority to the first conditional (envio)
 	else if (cntTM==10)//(cntTM==113) // Muestrea sensores cada hora
 	{
-		//mqtt_pub_int("josepamb/feeds/bg95-mqtt-test-1", cntTM);
 		cntTM = 0;
 		estado = muestreo;
 	}
@@ -84,13 +82,7 @@ int main(void)
 			
 	//bg95_On(); //debug new
 	bg95_Init();
-	
-	//mqtt_init();
-	//mqtt_connect();
-	//mqtt_pub_str("josepamb/feeds/welcome-feed", "------INICIA PRUEBA--------");
-	//_delay_ms(3000);
-	
-	//mqtt_disconnect();
+	mqtt_pub_str("josepamb/feeds/welcome-feed", "START");
 	while (1)
 	{
 		//computeStateMachine(estado);

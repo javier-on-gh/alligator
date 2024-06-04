@@ -82,38 +82,13 @@ void DrvUSART_SendStr(char *str) {
 	_delay_ms(100); //IMPORTANT (cambiar por interrupcion TXC)
 }
 
-u8 DrvUSART_GetChar(void)
-{
-	while(!(UCSR0A & (1 << RXC0)));
-	return UDR0;
-}
+//u8 DrvUSART_GetChar(void) //debug cleaning
+//{
+	//while(!(UCSR0A & (1 << RXC0)));
+	//return UDR0;
+//}
 
 /******* With interrupts, using circular buffers *******/
-// reads buffer filled on RXC interrupt
-void DrvUSART_GetString(void) {
-	asm("cli");
-	char caracter;
-	clear();
-	while (rxReadPos != rxWritePos) { // until it reaches write pos
-		caracter = rxBuffer[rxReadPos];
-		
-		if (caracter == '\0') { //nunca, el puerto UART no manda NULL
-			break;
-		}
-		if (caracter == '\r') {
-			//lcdSendStr("cr");
-		}
-		else if (caracter == '\n') {
-			lcdSendStr(" "); //lf
-		}
-		else {
-			lcdSendChar(caracter);
-		}
-		//if rxReadPos reaches 127 it returns to 0
-		rxReadPos = (rxReadPos + 1) % BUFFER_SIZE;
-	}
-	asm("sei");
-}
 
 /* For storing everything except echoed command in linear buffer */
 /* WORKS PERFECT WITH AND WITHOUT ECHO */
@@ -186,19 +161,19 @@ void processData_wait(char *buff, size_t buffsize, int timeout_ms) {
 	buff[i] = '\0'; //null terminate
 }
 
-// FOR TXC INTERRUPT
-void appendSerial(char c) {
-	txBuffer[txWritePos] = c;
-	txWritePos = (txWritePos + 1) % BUFFER_SIZE;
-}
-
-void serialWrite(char *str) {
-	for(uint8_t i = 0; i < strlen(str); i++) {
-		appendSerial(str[i]);
-	}
-	appendSerial('\r');
-	if(UCSR0A & (1 << UDRE0)) {
-		UDR0 = 0; //dummy byte to trigger ISR
-	}
-	snprintf(lastCommand, sizeof(lastCommand), "%s", str);
-}
+// FOR TXC INTERRUPT //debug cleaning
+//void appendSerial(char c) {
+	//txBuffer[txWritePos] = c;
+	//txWritePos = (txWritePos + 1) % BUFFER_SIZE;
+//}
+//
+//void serialWrite(char *str) {
+	//for(uint8_t i = 0; i < strlen(str); i++) {
+		//appendSerial(str[i]);
+	//}
+	//appendSerial('\r');
+	//if(UCSR0A & (1 << UDRE0)) {
+		//UDR0 = 0; //dummy byte to trigger ISR
+	//}
+	//snprintf(lastCommand, sizeof(lastCommand), "%s", str);
+//}

@@ -27,7 +27,6 @@
 #include "DrvUSART.h"
 #include "DrvTWI.h"
 #include "DrvWDT.h"
-#include "lcdi2c.h"
 #include "state_machine.h"
 #include "MXC4005XC.h"
 #include "bg95_mqtt.h"

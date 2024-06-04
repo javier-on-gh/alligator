@@ -12,23 +12,12 @@ extern float ACCEL_BUFF[4];
 // -------- MQTT -------- //
 
 //// ** REAL CLOUD ** //
-//#define IO_USERNAME  ""
+//#define IO_USERNAME  "_jahh"
 //#define IO_KEY		 ""
 //const char *clientID = "bg95";
 //const char *topic = "_jahh/f/Luz";
 
 // ** TESTING CLOUD ** //
-#define IO_USERNAME  ""
-#define IO_KEY       ""
-const char *topic = "josepamb/feeds/bg95-mqtt-test-1";
-const char *clientID = "bg95";
-const int clientidx = 0;
-
-const int sslcontextid = 0;
-
-const char *brokerAddress = "io.adafruit.com";
-const int brokerPort = 1883;  // MQTT default port, use 8883 for SSL
-const int brokerPortSSL = 8883;
 #define COMMAND_BUFF_SIZE 128
 char ATcommand[COMMAND_BUFF_SIZE];  // temporary buffer to hold ATcommand
 
@@ -36,6 +25,7 @@ extern char TEMP[128];
 
 //nothing for now:
 void mqtt_init(void){
+	//DrvUSART_SendStr("AT+QGPSCFG=\"priority\",1,1"); //Prioridad a WWAN //already in init
 	//query some data beforehand
 	//// Turn on full cellular functionality
 	//sendATCommands("AT+CFUN=1");
@@ -48,17 +38,21 @@ void mqtt_init(void){
 	//// Check the received signal strength
 	//sendATCommands("AT+QCSQ");
 	
-	//tcp
 	/*
 		APN:	internet.itelcel.com
 		Nombre de usuario:	webgprs
 		Contraseña:	webgprs2002
+		Authenticacion: PAP --> 1
+		Context type: IPv4/v6 --> 3
 		//AT+QICSGP=<contextID>[,<context_type>,<APN>[,<username>,<password>[,<authentication>]]]
 	*/
 	////PDP context: AT+QICSGP=<contextID>[,<context_type>,<APN>[,<username>,<password>[,<authentication>]]]
-	//TRY_COMMAND("AT+QICSGP=1,1,\"internet.itelcel.com\",\"\",\"\",0", TEMP, sizeof(TEMP));
-	//TRY_COMMAND("AT+QIACT=1", TEMP, sizeof(TEMP));
-	//TRY_COMMAND("AT+QIACT?", TEMP, sizeof(TEMP));
+	//ORIGINAL: AT+QICSGP=1,3,"internet.itelcel.com","","",1
+	//DrvUSART_SendStr("AT+QICSGP=1,3,\"internet.itelcel.com\",\"\",\"\",0"); //already in init
+	//Activate PDP context
+	DrvUSART_SendStr("AT+QIACT=1"); //debug change to try command and bools
+	//Check if activated
+	//DrvUSART_SendStr("AT+QIACT?"); //if buffer has
 	
 	//SSL authentication version AT+QSSLCFG="sslversion",0,4
 	DrvUSART_SendStr("AT+QSSLCFG=\"sslversion\",0,4");
@@ -106,9 +100,9 @@ void mqtt_subscribe(const char *topic){
 	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
 
-void mqtt_read(void){
-	TRY_COMMAND("AT+QMTRECV=0", TEMP, sizeof(TEMP));
-}
+//void mqtt_read(void){
+	//TRY_COMMAND("AT+QMTRECV=0", TEMP, sizeof(TEMP));
+//}
 
 
 //-----Publishing messages----
@@ -177,8 +171,8 @@ void mqtt_pub_float_buffer(const char *topic, float *message, size_t buffersize)
 void mqtt_disconnect(void){
 	DrvUSART_SendStr("AT+QMTCLOSE=0");
 	DrvUSART_SendStr("AT+QMTDISC=0");
+	DrvUSART_SendStr("AT+QSSLCLOSE=0");
 	DrvUSART_SendStr("AT+QIDEACT=1");
-	
 	/*
 	//close everyting
 	TRY_COMMAND("AT+QMTCLOSE=1", TEMP, sizeof(TEMP));

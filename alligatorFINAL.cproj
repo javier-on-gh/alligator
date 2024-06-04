@@ -178,19 +178,7 @@
     <Compile Include="error_handling.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="font.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="font.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="global.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lcdi2c.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lcdi2c.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="lgt8f328p_gcc.h">

@@ -9,7 +9,7 @@
 #include "error_handling.h"
 
 extern char lastCommand[20];
-extern char TEMP[128];
+//extern char TEMP[128]; //debug cleaning
 
 bool handleMoveOn(void){return true;}
 
@@ -43,7 +43,7 @@ bool handle505(void){
 	if (comparison == 0){ //if strings are equal
 		return true; //already off
 	}
-	sendATCommands("AT+QGPS=1");
+	DrvUSART_SendStr("AT+QGPS=1");
 	//TRY_COMMAND("AT+QGPS=1", TEMP, sizeof(TEMP)); //for printing/debugging
 	return false;
 }
@@ -69,6 +69,7 @@ bool handlemqttconnection(char *buffer, size_t buffersize){
 		else if(strstr(buffer, "+QMTOPEN: 0,3")){
 			// 3 Failed to activate PDP
 			//DrvUSART_SendStr("AT+QPOWD=1"); //debug
+			//estado = reiniciando; //debug
 			return true; //TODO: handle here debug
 		}
 		else{
@@ -85,7 +86,6 @@ bool handlemqttconnection(char *buffer, size_t buffersize){
 			//DrvUSART_SendStr("AT+QMTDISC=0");
 			//DrvUSART_SendStr("AT+QMTOPEN=0,\"io.adafruit.com\",8883");
 			//_delay_ms(5000);
-			//DrvUSART_SendStr("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"");
 			//TODO: recall mqtt init and open and connect
 			return true; // debug handle here maybe restart module?
 		}
