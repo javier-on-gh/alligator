@@ -18,7 +18,7 @@ bool handleMoveOn(void);
 bool handleRetry(void);
 bool handleNoErrorCode(void);
 bool handle505(void);
-bool handlemqttconnection(char *buffer, size_t buffersize);
+bool handleconnection(char *buffer, size_t buffersize);
 
 
 //if we know the exact size: For now, declared in statemachine.c

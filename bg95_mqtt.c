@@ -6,6 +6,8 @@
  */ 
 
 #include "allinone.h"
+#include "bg95_mqtt.h"
+#include "state_machine.h"
 
 extern float ACCEL_BUFF[4];
 
@@ -110,11 +112,14 @@ void mqtt_subscribe(const char *topic){
 //debug try msgID = 1, qos = 1 or msgID = 0, qos = 0
 
 //NOTE: message should be short!!!
-void mqtt_pub_str(const char *topic, const char *message){
+void mqtt_pub_str(const char *topic, char *message){
 	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%s\"", topic, message);
 	DrvUSART_SendStr(ATcommand);
 	//TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
+
+/*
+
 void mqtt_pub_char(const char *topic, const char message){
 	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%x\"", topic, message);
 	DrvUSART_SendStr(ATcommand);
@@ -173,10 +178,10 @@ void mqtt_disconnect(void){
 	DrvUSART_SendStr("AT+QMTDISC=0");
 	DrvUSART_SendStr("AT+QSSLCLOSE=0");
 	DrvUSART_SendStr("AT+QIDEACT=1");
-	/*
-	//close everyting
-	TRY_COMMAND("AT+QMTCLOSE=1", TEMP, sizeof(TEMP));
-	TRY_COMMAND("AT+QSSLCLOSE=1,10?", TEMP, sizeof(TEMP));
-	TRY_COMMAND("AT+QIDEACT=1", TEMP, sizeof(TEMP));
-	*/
+	
+	////close everyting
+	//TRY_COMMAND("AT+QMTCLOSE=1", TEMP, sizeof(TEMP));
+	//TRY_COMMAND("AT+QSSLCLOSE=1,10?", TEMP, sizeof(TEMP));
+	//TRY_COMMAND("AT+QIDEACT=1", TEMP, sizeof(TEMP));
 }
+*/

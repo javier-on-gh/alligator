@@ -5,6 +5,8 @@
  *  Author: JPMB
  */
 #include "allinone.h"
+#include "MXC4005XC.h"
+#include "state_machine.h"
 
 ISR(INT0_vect){
 	//interrupcion de acelerometro INT pin

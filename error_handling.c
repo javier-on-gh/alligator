@@ -7,6 +7,7 @@
 
 #include "allinone.h"
 #include "error_handling.h"
+#include "state_machine.h"
 
 extern char lastCommand[20];
 //extern char TEMP[128]; //debug cleaning
@@ -48,7 +49,7 @@ bool handle505(void){
 	return false;
 }
 
-bool handlemqttconnection(char *buffer, size_t buffersize){
+bool handleconnection(char *buffer, size_t buffersize){
 	//after-OK responses:
 	if (strstr(lastCommand, "AT+QMTOPEN") != NULL){ //Redundant if, can just check buffer
 		if(strstr(buffer, "+QMTOPEN: 0,0")){
@@ -62,8 +63,8 @@ bool handlemqttconnection(char *buffer, size_t buffersize){
 		}
 		else if(strstr(buffer, "+QMTOPEN: 0,2")){
 			// 2 MQTT client identifier is occupied
-			DrvUSART_SendStr("AT+QMQTCLOSE=0");
-			DrvUSART_SendStr("AT+QIDEACT=1");
+			//DrvUSART_SendStr("AT+QMQTCLOSE=0");
+			//DrvUSART_SendStr("AT+QIDEACT=1");
 			return false; // try again
 		}
 		else if(strstr(buffer, "+QMTOPEN: 0,3")){

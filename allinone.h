@@ -16,7 +16,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
+#include <string.h> //DEBUG QUITAR DE ALLINONE
 
 #include "global.h"
 #include "macros_auto.h"
@@ -26,10 +26,5 @@
 #include "DrvADC.h"
 #include "DrvUSART.h"
 #include "DrvTWI.h"
-#include "DrvWDT.h"
-#include "state_machine.h"
-#include "MXC4005XC.h"
-#include "bg95_mqtt.h"
-#include "error_handling.h"
 
 #endif // __ALLIONONE_H__

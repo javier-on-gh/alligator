@@ -16,10 +16,10 @@ u16 iluminacion(void);
 void bg95_On(void);
 void bg95_Init(void);
 
-//void sendATCommands(char *);
+//void sendATCommands(char *); //debug cleaning
 bool GPS(void);
 bool TRY_COMMAND(char *, char *, size_t);
-bool handleResponse(char *, size_t);
+//bool handleResponse(char *, size_t);
 bool handleError(char *, size_t);
 
 void computeStateMachine_fake(void);
