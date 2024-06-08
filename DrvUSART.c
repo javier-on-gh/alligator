@@ -63,21 +63,41 @@ void DrvUSART_Init(void)
 }
 
 /******* without interrupts, directly on register *******/
-void DrvUSART_SendChar(u8 u8Char)
-{
-	while(!(UCSR0A & (1 << UDRE0)));
-	UDR0 = u8Char;
-}
+//void DrvUSART_SendChar(u8 u8Char)
+//{
+	//while(!(UCSR0A & (1 << UDRE0)));
+	//UDR0 = u8Char;
+//}
 
-void DrvUSART_SendStr(char *str) {
-	char *pt = str;
+//debug cleaning
+//void copyString(char *dest, const char *src, size_t destSize) {
+	//size_t i;
+	//for (i = 0; i < destSize - 1 && src[i] != '\0'; ++i) {
+		//dest[i] = src[i];
+	//}
+	//dest[i] = '\0'; // Ensure null termination
+//}
+
+
+void DrvUSART_SendStr(const char *str) {
+	const char *pt = str;
 	while(*pt)
 	{
-		DrvUSART_SendChar(*pt++);
+		//DrvUSART_SendChar(*pt++);
+		while(!(UCSR0A & (1 << UDRE0)));
+		UDR0 = *pt++;
 	}
-	DrvUSART_SendChar('\r'); //SEND TERMINATING CHARACTER TO BG95
+	//DrvUSART_SendChar('\r'); //SEND TERMINATING CHARACTER TO BG95
+	while(!(UCSR0A & (1 << UDRE0)));
+	UDR0 = '\r';
 	
-	snprintf(lastCommand, sizeof(lastCommand), "%s", str);
+	//snprintf(lastCommand, sizeof(lastCommand), "%s", str); //debug cleaning
+	//copyString(lastCommand, str, sizeof(lastCommand));
+	size_t i;
+	for (i = 0; i < sizeof(lastCommand) - 1 && str[i] != '\0'; ++i) {
+		lastCommand[i] = str[i];
+	}
+	 lastCommand[i] = '\0';
 	
 	_delay_ms(100); //IMPORTANT (cambiar por interrupcion TXC)
 }
@@ -93,7 +113,10 @@ void DrvUSART_SendStr(char *str) {
 /* For storing everything except echoed command in linear buffer */
 /* WORKS PERFECT WITH AND WITHOUT ECHO */
 void processData(char *buff, size_t buffsize) {
-	memset(buff, 0, buffsize); // clear buff
+	//memset(buff, 0, buffsize); // clear buff //debug cleaning
+	for (size_t i = 0; i < buffsize; ++i) {
+		buff[i] = 0; // Set each byte to zero
+	}
 	int i = 0;
 	
 	////DEBUG: Comment for debugging with echo / Uncomment if echo is not necessary
@@ -124,7 +147,10 @@ void processData(char *buff, size_t buffsize) {
 }
 
 void processData_wait(char *buff, size_t buffsize, int timeout_ms) {
-	memset(buff, 0, buffsize); // clear buff
+	//memset(buff, 0, buffsize); // clear buff //debug cleaning
+	for (size_t i = 0; i < buffsize; ++i) {
+		buff[i] = 0; // Set each byte to zero
+	}
 	int i = 0;
 	
 	////DEBUG: Comment for debugging with echo / Uncomment if echo is not necessary

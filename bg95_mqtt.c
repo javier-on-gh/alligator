@@ -11,22 +11,15 @@
 
 extern float ACCEL_BUFF[4];
 
-// -------- MQTT -------- //
-
-//// ** REAL CLOUD ** //
-//#define IO_USERNAME  "_jahh"
-//#define IO_KEY		 ""
-//const char *clientID = "bg95";
-//const char *topic = "_jahh/f/Luz";
-
 // ** TESTING CLOUD ** //
 #define COMMAND_BUFF_SIZE 128
 char ATcommand[COMMAND_BUFF_SIZE];  // temporary buffer to hold ATcommand
 
-extern char TEMP[128];
+//extern char TEMP[128]; //debug cleaning
 
 //nothing for now:
 void mqtt_init(void){
+	//TODO: CAMBIAR POR TRYCOMMAND
 	//DrvUSART_SendStr("AT+QGPSCFG=\"priority\",1,1"); //Prioridad a WWAN //already in init
 	//query some data beforehand
 	//// Turn on full cellular functionality
@@ -73,6 +66,7 @@ void mqtt_init(void){
 }
 
 bool mqtt_connect(void){
+	char TEMP[128] = {0};
 	//----- Open the client
 	bool opened = TRY_COMMAND("AT+QMTOPEN=0,\"io.adafruit.com\",8883", TEMP, sizeof(TEMP));
 	//DrvUSART_SendStr("AT+QMTOPEN=0,\"io.adafruit.com\",8883");
@@ -94,28 +88,60 @@ bool mqtt_connect(void){
 	//}
 }
 
-void mqtt_subscribe(const char *topic){
-	//AT+QMTSUB=<client_idx>,<msgID>,<topic1>,<qos1>[,<topic2>,<qos2>...]
-	//debug try qos = 1 or 0
-	sprintf(ATcommand, "AT+QMTSUB=0,1,\"%s\",1", topic);
-	//sendATCommands(ATcommand);
-	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
-}
-
-//void mqtt_read(void){
-	//TRY_COMMAND("AT+QMTRECV=0", TEMP, sizeof(TEMP));
-//}
-
-
 //-----Publishing messages----
 //AT+QMTPUB=<client_idx>,<msgID>,<qos>,<retain>,<topic>
 //debug try msgID = 1, qos = 1 or msgID = 0, qos = 0
 
 //NOTE: message should be short!!!
-void mqtt_pub_str(const char *topic, char *message){
-	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%s\"", topic, message);
-	DrvUSART_SendStr(ATcommand);
+//void mqtt_pub_str(const char *topic, const char *message){
+	//char TEMP[128] = {0};
+	//snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%s\"", topic, message);
+	////DrvUSART_SendStr(ATcommand);
+	////processData(TEMP, sizeof(TEMP));
 	//TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
+//}
+//debug cleaning
+void mqtt_pub_str(const char *topic, const char *message) {
+	char TEMP[128] = {0};
+	size_t idx = 0;
+	const char *prefix = "AT+QMTPUBEX=0,1,1,0,\"";
+	while (prefix[idx] != '\0' && idx < COMMAND_BUFF_SIZE - 1) {
+		ATcommand[idx] = prefix[idx];
+		idx++;
+	}
+
+	// Add the topic
+	size_t i = 0;
+	while (topic[i] != '\0' && idx < COMMAND_BUFF_SIZE - 1) {
+		ATcommand[idx] = topic[i];
+		idx++;
+		i++;
+	}
+
+	// Add the separator
+	const char *separator = "\",\"";
+	i = 0;
+	while (separator[i] != '\0' && idx < COMMAND_BUFF_SIZE - 1) {
+		ATcommand[idx] = separator[i];
+		idx++;
+		i++;
+	}
+
+	// Add the message
+	i = 0;
+	while (message[i] != '\0' && idx < COMMAND_BUFF_SIZE - 1) {
+		ATcommand[idx] = message[i];
+		idx++;
+		i++;
+	}
+
+	// End of the command
+	ATcommand[idx++] = '\"';
+	ATcommand[idx] = '\0';  // Null-terminate the string
+
+	// Send the command
+	//DrvUSART_SendStr(ATcommand);
+	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
 
 /*
@@ -172,6 +198,7 @@ void mqtt_pub_float_buffer(const char *topic, float *message, size_t buffersize)
 	*ptr = '\0';
 	DrvUSART_SendStr(ATcommand);
 }
+*/
 
 void mqtt_disconnect(void){
 	DrvUSART_SendStr("AT+QMTCLOSE=0");
@@ -180,8 +207,8 @@ void mqtt_disconnect(void){
 	DrvUSART_SendStr("AT+QIDEACT=1");
 	
 	////close everyting
-	//TRY_COMMAND("AT+QMTCLOSE=1", TEMP, sizeof(TEMP));
+	//TRY_COMMAND("AT+QMTCLOSE=0", TEMP, sizeof(TEMP));
+	//TRY_COMMAND("AT+QMTDISC=0", TEMP, sizeof(TEMP));
 	//TRY_COMMAND("AT+QSSLCLOSE=1,10?", TEMP, sizeof(TEMP));
 	//TRY_COMMAND("AT+QIDEACT=1", TEMP, sizeof(TEMP));
 }
-*/

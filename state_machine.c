@@ -18,7 +18,7 @@
 //bool bg95_on = false;
 //bool mqtt_connected = false;
 
-char TEMP[128] = {0};
+//char TEMP[128] = {0}; //global buffer not a great idea
 //char COORDS[18] = {0};
 //float ACCEL_BUFF[4] = {0}; //accelerometer buffer //debug cambiar por char?
 //u16 light;
@@ -65,7 +65,6 @@ ERROR mqttURCsActions[] = {
 	{7, handleMoveOn},			//  TODO: Make sure the link is alive or the server is available currently.
 };
 
-/*
 void computeStateMachine_fake(void) {
 	switch(estado)
 	{
@@ -80,19 +79,19 @@ void computeStateMachine_fake(void) {
 			//light = 0x0064; //12345d
 			//temper = 4.27;
 			//puerta++;
-			//if(cell_location()) //debug new
-			//{
-				//estado = envio;
-				//break;
-			//}
-			snprintf(COORDS, sizeof(COORDS), "20.6467,-100.4305");// debug remove
-			snprintf(TEMP, sizeof(TEMP), "%d,%s,0", 0, COORDS); //works			
+			if(cell_location()) //debug new
+			{
+				estado = envio;
+				break;
+			}
+			//snprintf(COORDS, sizeof(COORDS), "20.6467,-100.4305");// debug remove
+			//snprintf(TEMP, sizeof(TEMP), "%d,%s,0", 0, COORDS); //works			
 			estado = dormido;
 			break;
 		
 		case envio: //mandar a la nube
-			//mqtt_pub_str("josepamb/feeds/welcome-feed", "envio");
-			mqtt_pub_str("josepamb/feeds/beacon.gps/csv", TEMP); //works
+			mqtt_pub_str("josepamb/feeds/welcome-feed", "envio");
+			//mqtt_pub_str("josepamb/feeds/beacon.gps/csv", prueba_buff);
 			//mqtt_pub_str("josepamb/feeds/welcome-feed", TEMP); //works
 			
 			//mqtt_init();
@@ -138,8 +137,6 @@ void computeStateMachine_fake(void) {
 	asm("nop");
 	asm("nop");
 }
-
-*/
 	
 /*
 void computeStateMachine(void) {
@@ -262,6 +259,7 @@ void bg95_On(void){
 */
 
 void bg95_Init(void){
+	char TEMP[128] = {0};
 	//bg95_On(); //encender (ya está en main.c)
 	TRY_COMMAND("ATE0", TEMP, sizeof(TEMP)); //Desactivar el eco
 	TRY_COMMAND("AT&W0", TEMP, sizeof(TEMP)); //guardar configuracion (NO eco)
@@ -310,7 +308,7 @@ bool GPS(void) {
 
 */
 /* WORKS PERFECT: Try command and handle response */
-bool TRY_COMMAND(char *command, char *buffer, size_t buffersize){
+bool TRY_COMMAND(const char *command, char *buffer, size_t buffersize){
 	DrvUSART_SendStr(command);
 	processData(buffer, buffersize); // guarda respuesta en buffer
 	//processData_wait(buffer, buffersize, 5000); //or wait_time
@@ -338,7 +336,7 @@ bool TRY_COMMAND(char *command, char *buffer, size_t buffersize){
 	else {
 		return handleError(buffer, buffersize);
 	}
-	return false;
+	//return false;
 }
 /*
 bool handleResponse(char *buffer, size_t buffersize) {
@@ -397,7 +395,7 @@ bool handleError(char *buffer, size_t buffersize) {
 
 //WORKING PERFECT!!!! (almost)
 bool cell_location(void){
-	//char TEMP[128] = {0};
+	char TEMP[128] = {0};
 	const char *ptr = TEMP;
 	char API_URL[128] = {0};
 	unsigned int mcc = 0;     // 3 digits
@@ -457,15 +455,15 @@ bool cell_location(void){
 	TRY_COMMAND("AT+QICSGP=1,3,\"internet.itelcel.com\",\"\",\"\",0", TEMP, sizeof(TEMP));
 	TRY_COMMAND("AT+QHTTPCFG=\"contextid\",1", TEMP, sizeof(TEMP));
 	TRY_COMMAND("AT+QIACT=1", TEMP, sizeof(TEMP));
+	TRY_COMMAND("AT+QHTTPCFG=\"sslctxid\",1", TEMP, sizeof(TEMP));
+	TRY_COMMAND("AT+QSSLCFG=\"sni\",1,1", TEMP, sizeof(TEMP));
 	//DEBUG UNCOMMENT THESE!!!!
-	//TRY_COMMAND("AT+QHTTPCFG=\"sslctxid\",1", TEMP, sizeof(TEMP));
-	//TRY_COMMAND("AT+QSSLCFG=\"sni\",1,1", TEMP, sizeof(TEMP));
 	//TRY_COMMAND("AT+QSSLCFG=\"sslversion\",1,4", TEMP, sizeof(TEMP));
 	//TRY_COMMAND("AT+QSSLCFG=\"ciphersuite\",1,0xFFFF", TEMP, sizeof(TEMP));
 	//TRY_COMMAND("AT+QSSLCFG=\"seclevel\",1,0", TEMP, sizeof(TEMP));
 	
 	//NOTE: AJAX url seems more accurate on initial tests...
-	 snprintf(API_URL, sizeof(API_URL), "https://opencellid.org/ajax/searchCell.php?&mcc=%u&mnc=%u&lac=%u&cell_id=%lu",
+	snprintf(API_URL, sizeof(API_URL), "https://opencellid.org/ajax/searchCell.php?&mcc=%u&mnc=%u&lac=%u&cell_id=%lu",
 	          mcc, mnc, tac, cellid);
 	//snprintf(API_URL, sizeof(API_URL), "https://opencellid.org/cell/get?key=pk.7d121714a5e01aac0f3ae816c18b0991&mcc=%u&mnc=%u&lac=%u&cellid=%lu&format=at",
 	//mcc, mnc, tac, cellid);
@@ -501,217 +499,14 @@ bool cell_location(void){
 	
 	//Example response (AJAX) url: {"lon":"-100.441032","lat":"20.64126","range":"1000"}
 	if ((ptr = strstr(TEMP, "\"lon\":")) != NULL) {
-		volatile char lat[16], lon[16];
+		char lat[16], lon[16];
 		if (sscanf(ptr, "\"lon\":\"%[^\"]\",\"lat\":\"%[^\"]\"", lat, lon) != 2) {
 			return false;
 		}
-		snprintf(TEMP, sizeof(TEMP), "%d,%s,%s,0", 1, lon, lat); //works! (value,lat,lon,alt)
+		//debug cleaning (maybe use a TEMP for everything except lat and lon)
+		snprintf(TEMP, sizeof(TEMP), "%d,%s,%s,0", 6, lon, lat); //works! (value,lat,lon,alt)
 		mqtt_pub_str("josepamb/feeds/beacon.gps/csv", TEMP);
 		return true;
 	}
 	return false;
 }
-
-/*
-//void queclocator(void){
-	//ORIGINALS (not applicable to BG95 M3):
-		//AT+QICSGP=1,3,"internet.itelcel.com","","",1
-		//AT+QIACT=1
-		//AT+QIACT?
-		//AT+QLOCCFG="contextid",1
-		//AT+QLOCCFG="contextid"
-		//AT+QLOCCFG="timeout",10
-		//AT+QLOCCFG="timeout"
-		////debug:
-		//AT+QLOCCFG="token","1234567812345678"
-		//AT+QLOCCFG="token"
-		//AT+QLOCCFG="server","47.74.213.211:80"
-		//AT+QLOCCFG="server"
-		//AT+QCELLLOC
-		//
-	//ORIGINALS (Applicable to BG95 M3):
-		//////optionals:
-		//AT+QLBSCFG="asynch"
-		//AT+QLBSCFG="timeout"
-		//AT+QLBSCFG="timeupdate"
-		//AT+QLBSCFG="withtime"
-		//AT+QLBSCFG="scanband"
-		//AT+QLBSCFG="singlecell"
-		//AT+QLBSCFG="server"
-		//AT+QLBSCFG="token"
-		//////
-		//AT+QCFG="nwscanseq",020103
-		//AT+QCFG="band",0,8,0
-		//AT+QCFG="iotopmode",0,1
-		//
-		//AT+QLBSCFG="latorder",1
-		//AT+QLBSCFG="asynch",1
-		//AT+QLBS
-//}
-*/
-
-	/*
-	ORIGINAL AND ADAPTED COMMANDS FOR TESTING
-	1. WORKS!!: GET request
-		AT+QICSGP=1,3,"internet.itelcel.com","","",0
-		AT+QHTTPCFG="contextid",1
-		AT+QHTTPCFG="responseheader",0
-		AT+QIACT=1
-		AT+QHTTPCFG="sslctxid",1
-		AT+QSSLCFG="sni",1,1		//VERY IMPORTANT SERVER NAME INDICATION
-		AT+QSSLCFG="sslversion",1,4
-		AT+QSSLCFG="ciphersuite",1,0xFFFF
-		AT+QSSLCFG="seclevel",1,0
-		AT+QHTTPURL=121
-			http://opencellid.org/cell/get?key=pk.7d121714a5e01aac0f3ae816c18b0991&mcc=334&mnc=20&lac=23312&cellid=58224897&format=at
-		or...
-		AT+QHTTPURL=84
-			https://opencellid.org/ajax/searchCell.php?mcc=334&mnc=20&lac=23312&cell_id=58224899
-		
-		AT+QHTTPGET
-		AT+QHTTPREAD
-		
-	
-	2. WORKS: without files to unwiredlabs
-		AT+QHTTPURL=38
-			https://us1.unwiredlabs.com/v2/process
-			
-		AT+QHTTPPOST=133
-			{"token": "pk.7d121714a5e01aac0f3ae816c18b0991","mcc": 334,"mnc": 20,"cells": [{"lac": 23312,"cid": 58224899,"psc": 0}],"address": 1}
-		AT+QHTTPREAD
-		
-	3. Does WORK: POST request with files
-		AT+QFLST="*"			//query files in memory
-		AT+QFOPEN="test.json",0
-		AT+QFWRITE=1
-			{
-				"token": "pk.7d121714a5e01aac0f3ae816c18b0991",
-				"mcc": 334,
-				"mnc": 020,
-				"cells": [{
-					"lac": 23312,
-					"cid": 58224899,
-					"psc": 0
-				}],
-				"address": 1
-			}
-		AT+QFOPEN="test.json"
-		AT+QFSEEK=1,0,0
-		AT+QFREAD=1
-		AT+QFCLOSE=1
-		AT+QHTTPURL=38
-			https://us1.unwiredlabs.com/v2/process
-		AT+QHTTPPOSTFILE="test.json"
-		AT+QHTTPREADFILE="3.txt"
-		AT+QFOPEN="3.txt"
-		AT+QFREAD=2
-		AT+QFCLOSE=2
-	*/
-	
-	
-	
-/*
-bool cell_location(void) {
-	asm("cli");
-	char *API_URL = (char *)malloc(128 * sizeof(char));
-	char *TEMPO = (char *)malloc(192 * sizeof(char));
-	unsigned int mcc = 0;     // 3 digits
-	unsigned int mnc = 0;     // 2 digits
-	unsigned int tac = 0;     // Hexadecimal, 2 bytes
-	unsigned int cellid = 0;  // Hexadecimal, 28 bits (4 bytes)
-	int rssi = 0;             // signed int (signal strength in dBm)
-	
-	//----------- STEP 1 get tower cell info -------------//
-	//OPTION 1:
-	//TRY_COMMAND("AT+QENG=\"servingcell\"", TEMP, sizeof(TEMP));
-	//// +QENG: "servingcell","NOCONN","eMTC","FDD",334,020,3787103,260,2050,4,5,5,5B10,-108,-11,-83,19,13
-	////sk = skip st = store | sk  	  sk  	 sk   st   st  st	  sk  sk  sk sk sk st   sk  sk  sk sk sk
-	//if (strstr(TEMP, "+QENG: \"servingcell\"") != NULL) {
-	//sscanf(TEMP, "+QENG: \"servingcell\",\"%*[^,],%*[^,],%*[^,],%d,%d,%x,%*[^,],%*[^,],%*[^,],%*[^,],%*[^,],%x",
-	//&mcc, &mnc, &cellid, &tac);
-	//}
-	//OPTION 2:
-	DrvUSART_SendStr("AT+QCELLSCAN=8,10");
-	processData(TEMPO, sizeof(TEMPO));
-	// Example response: +QCELLSCAN: "eMTC",334,020,5B10,2050,258,3787101,-110,-14,-82
-	// sk = skip, st = store	 |		sk  st  st  st    sk  sk    st      sk  sk   st
-	if (strstr(TEMPO, "+QCELLSCAN:") != NULL) {
-		mqtt_pub_str("josepamb/feeds/welcome-feed", "jeje");
-		sscanf(TEMPO, "+QCELLSCAN: \"%*[^,],%u,%u,%x,%*[^,],%*[^,],%x,%*[^,],%*[^,],%d",
-		&mcc, &mnc, &tac, &cellid, &rssi);
-		//TODO: store the rest of the rssi's...
-	}
-	//logic to triangulate location based on signal strength...
-	
-	//----------- STEP 2 Use Geolocation API to approximate location -------------//
-	//OPTION 1 (GET request with key):
-	snprintf(API_URL, 128, "https://opencellid.org/cell/get?key=pk.7d121714a5e01aac0f3ae816c18b0991&mcc=%u&mnc=%u&lac=%u&cellid=%u&format=at",
-	mcc, mnc, tac, cellid);
-	////OPTION 2 (POST request to unwiredlabs):
-	//snprintf(API_URL, sizeof(API_URL), "https://us1.unwiredlabs.com/v2/process");
-	
-	////OPTION 3 (GET without key):
-	//snprintf(API_URL, sizeof(API_URL), "https://opencellid.org/ajax/searchCell.php?&mcc=%u&mnc=%u&lac=%u&cell_id=%u",
-	//mcc, mnc, tac, cellid);
-	
-	DrvUSART_SendStr("AT+QHTTPCFG=\"contextid\",1");
-	//DrvUSART_SendStr("AT+QHTTPCFG=\"responseheader\",0");
-	DrvUSART_SendStr("AT+QIACT=1");
-	DrvUSART_SendStr("AT+QHTTPCFG=\"sslctxid\",1");
-	DrvUSART_SendStr("AT+QSSLCFG=\"sni\",1,1"); //important
-	DrvUSART_SendStr("AT+QSSLCFG=\"sslversion\",1,4");
-	DrvUSART_SendStr("AT+QSSLCFG=\"ciphersuite\",1,0xFFFF");
-	DrvUSART_SendStr("AT+QSSLCFG=\"seclevel\",1,0");
-	
-	char command[32];
-	snprintf(command, sizeof(command), "AT+QHTTPURL=%u,80", strlen(API_URL));
-	DrvUSART_SendStr(command);  // Send the command to set the URL length
-	//TODO: wait for "CONNECT"
-	DrvUSART_SendStr(API_URL);  // Send the actual URL
-	
-	//OPTION 1: GET request
-	if (!TRY_COMMAND("AT+QHTTPGET=80", TEMPO, sizeof(TEMPO))) {
-		free(API_URL);
-		free(TEMPO);
-		asm("sei");
-		return false;  // Return false if the command fails
-	} //debug TODO wait for response (CONNECT)
-	////OPTION 2: POST request to the unwiredlabs:
-	//char post_msg[256];
-	//snprintf(post_msg, sizeof(post_msg), "{\"token\": \"pk.7d121714a5e01aac0f3ae816c18b0991\",\"mcc\": %d,\"mnc\": %d,\"cells\": [{\"lac\": %d,\"cid\": %d,\"psc\": 0}],\"address\": 1}", mcc, mnc, tac, cellid);
-	//snprintf(command, sizeof(command), "AT+QHTTPPOST=%ld,80,80", strlen(post_msg));
-	//if (!TRY_COMMAND(command, TEMP, sizeof(TEMP))) { //debug TODO wait for response (CONNECT)
-	//return false;
-	//}
-	//DrvUSART_SendStr(command); //expects strlen bytes
-	
-	if (!TRY_COMMAND("AT+QHTTPREAD=80", TEMPO, sizeof(TEMPO))) {
-		free(API_URL);
-		free(TEMPO);
-		asm("sei");
-		return false;  // Return false if the command fails
-	}
-	if (strstr(TEMPO, "+Location:") != NULL) {
-		volatile char lat[16], lon[16];
-		//OPTION 1: Normal
-		sscanf(TEMPO, "+Location:%[^,],%[^,],%*d", lat, lon);
-		////OPTION 2: unwiredlabs
-		//sscanf(TEMP, "{\"status\":%*[^,],%*[^,],\"lat\":%[^,],\"lon\":%[^,],\"accuracy\":%*d}", lat, lon);
-		
-		snprintf(COORDS, sizeof(COORDS), "%s,%s", lat, lon); //debug cleaning
-		
-		free(API_URL);
-		free(TEMPO);
-		asm("sei");
-		return true;
-	}
-	
-	DrvUSART_SendStr("AT+QSSLCLOSE=1");
-	DrvUSART_SendStr("AT+QIDEACT=1");
-	
-	free(API_URL);
-	free(TEMPO);
-	asm("sei");
-	return false;  // Return false if no location data was found
-}
-*/

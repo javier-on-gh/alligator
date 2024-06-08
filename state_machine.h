@@ -18,7 +18,7 @@ void bg95_Init(void);
 
 //void sendATCommands(char *); //debug cleaning
 bool GPS(void);
-bool TRY_COMMAND(char *, char *, size_t);
+bool TRY_COMMAND(const char *message, char *buffer, size_t buffersize);
 //bool handleResponse(char *, size_t);
 bool handleError(char *, size_t);
 
