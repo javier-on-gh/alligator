@@ -22,32 +22,34 @@
 
 #include "allinone.h"
 #include "state_machine.h"
-#include "bg95_mqtt.h"
+#include "bg95_mqtt.h" //debug quitar
+#include "MXC4005XC.h"
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 
 extern void init_modules(void);
 
-volatile int cntTM = 0;
+volatile int cntTM = 0; //important as volatile? try non volatile
 volatile int cntTE = 0;
 ISR(WDT_vect)
 {
 	WDTCSR |= (1<<WDIF); // Borra bandera
-	cntTE++;
 	cntTM++;
+	cntTE++;
 	
-	if (cntTM==10)//(cntTM==113) // Muestrea sensores cada hora
-	{
-		cntTM = 0;
-		estado = muestreo;
-	}
-	//else if gives priority to the first conditional (envio)
-	else if (cntTE==26)//2700) // Actualiza la nube cada 24 horas //debug new
+	if (cntTE==26)//2700) // Actualiza la nube cada 24 horas //debug new
 	{
 		cntTE = 0;
 		estado = envio;
 	}
+	else if (cntTM==10)//(cntTM==113) // Muestrea sensores cada hora
+	{
+		cntTM = 0;
+		estado = muestreo;
+	}
+	//else if gives priority to the first conditional
+	
 }
 
 int main(void)
@@ -84,18 +86,16 @@ int main(void)
 			
 	//bg95_On(); //debug new
 	//bg95_Init();
-	
-	mqtt_pub_str("josepamb/feeds/welcome-feed", "START");
-	
-	//cli();
-	//cell_location();
+	mqtt_pub_str("josepamb/feeds/welcome-feed", "------START------");
 	//_delay_ms(2000);
-	//mqtt_pub_str("josepamb/feeds/welcome-feed", "DONE");
 	
-	//sei();
+	////show the size of a data type
+	//char str[4]={0};
+	//snprintf(str, sizeof(str), "%u", sizeof(int));
+	//mqtt_pub_str("josepamb/feeds/welcome-feed", str);
+	
 	while (1)
 	{
-		//computeStateMachine(estado);
 		computeStateMachine_fake();
 	}
 }

@@ -18,22 +18,18 @@ bool handleRetry(void){return false;}
 	
 bool handleNoErrorCode(void){
 	// handle according to lastCommand for all types of errors including mqtt
-	if (strstr(lastCommand, "QMT") != NULL){ //if mqtt related or any type of connection
-		//TODO: handle check for sim and stuff and then try again 
-		//sendATcommands("COMMAND TO CHECK FOR SIM ETC");
-		//return false;
-		
-		//TODO: remove this below because its just redundant i guess
-		if (strstr(lastCommand, "AT+QMTOPEN") != NULL){
-			return true; //TODO: handle here debug
-		}
-		if (strstr(lastCommand, "AT+QMTCONN") != NULL){
-			// already connected
-			return true; //TODO: handle here debug
-		}
-		else{
-			return true;
-		}
+	//TODO: handle check for sim and stuff and then try again
+	//sendATcommands("COMMAND TO CHECK FOR SIM ETC");
+	//return false;
+	if (strstr(lastCommand, "AT+QMTOPEN") != NULL){
+		return true; //TODO: handle here debug
+	}
+	if (strstr(lastCommand, "AT+QMTCONN") != NULL){
+		// already connected
+		return true; //TODO: handle here debug
+	}
+	else{
+		return true;
 	}
 	//if not connection related:
 	return true;
@@ -44,6 +40,10 @@ bool handle505(void){
 	if (comparison == 0){ //if strings are equal
 		return true; //already off
 	}
+	////debug cleaning
+	//if (strstr(lastCommand, "AT+QGPSEND") != NULL){
+		//return true;
+	//}
 	DrvUSART_SendStr("AT+QGPS=1");
 	//TRY_COMMAND("AT+QGPS=1", TEMP, sizeof(TEMP)); //for printing/debugging
 	return false;
@@ -101,10 +101,10 @@ bool handleconnection(char *buffer, size_t buffersize){
 		}
 	}
 	
-	//URCs:
-	if (strstr(buffer, "QMTSTAT") != NULL){
-		return handleError(buffer, buffersize);
-	}
+	////URCs:
+	//if (strstr(buffer, "QMTSTAT") != NULL){
+		//return handleError(buffer, buffersize);
+	//}
 	
 	//connected successfully. NOTE: wont enter here if successful
 	return true;

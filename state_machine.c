@@ -18,14 +18,16 @@
 //bool bg95_on = false;
 //bool mqtt_connected = false;
 
-//char TEMP[128] = {0}; //global buffer not a great idea
-//char COORDS[18] = {0};
-//float ACCEL_BUFF[4] = {0}; //accelerometer buffer //debug cambiar por char?
-//u16 light;
-//float temper = 0.0;
-//int puerta = 0;
+//char TEMP[128] = {0}; //global buffer not a great idea remove
+//float ACCEL_BUFF[4] = {0}; //accelerometer buffer //debug cambiar por char? remove
 
-extern char lastCommand[20];
+////These must be global:
+u16 light = 0x0000;		//2 bytes
+float temper = 0.0;		//4 bytes
+int puerta = 0;		//2 bytes
+char COORDS[32] = {0};	//32 bytes
+
+extern char lastCommand[20]; //20 bytes
 
 ERROR errorActions[] = { //ERROR codes handling
 	//CME ERROR CODES
@@ -42,28 +44,28 @@ ERROR errorActions[] = { //ERROR codes handling
 	{549, handleMoveOn},	//Unknown error, continue
 };
 
-ERROR mqttURCsActions[] = {
-	//MQTT URCs
-	{1, handleMoveOn},	//  TODO: handlemqttconnection
-	{2, handleMoveOn},			//  TODO: Deactivate PDP first, and then activate PDP and reopen MQTT connection.
-	{3, handleMoveOn},			/*	TODO:
-									1. Check whether the inputted user name and	password are correct.
-									2. Make sure the client ID is not used.
-									3. Reopen MQTT connection and try to send CONNECT packet to the server again.}
-								*/
-	
-	{4, handleMoveOn},			/*	TODO:
-									1. Check whether the inputted user name and	password are correct.
-									2. Make sure the client ID is not used.
-									3. Reopen MQTT connection and try to send CONNECT packet to the server again.}
-								*/
-	{5, handleMoveOn},			//  Normal, move on
-	{6, handleMoveOn},			/*	TODO:
-									1. Make sure the data is correct.
-									2. Try to reopen MQTT connection since there may be network congestion or an error.
-								*/
-	{7, handleMoveOn},			//  TODO: Make sure the link is alive or the server is available currently.
-};
+//ERROR mqttURCsActions[] = {
+	////MQTT URCs
+	//{1, handleMoveOn},	//  TODO: handlemqttconnection
+	//{2, handleMoveOn},			//  TODO: Deactivate PDP first, and then activate PDP and reopen MQTT connection.
+	//{3, handleMoveOn},			/*	TODO:
+									//1. Check whether the inputted user name and	password are correct.
+									//2. Make sure the client ID is not used.
+									//3. Reopen MQTT connection and try to send CONNECT packet to the server again.}
+								//*/
+	//
+	//{4, handleMoveOn},			/*	TODO:
+									//1. Check whether the inputted user name and	password are correct.
+									//2. Make sure the client ID is not used.
+									//3. Reopen MQTT connection and try to send CONNECT packet to the server again.}
+								//*/
+	//{5, handleMoveOn},			//  Normal, move on
+	//{6, handleMoveOn},			/*	TODO:
+									//1. Make sure the data is correct.
+									//2. Try to reopen MQTT connection since there may be network congestion or an error.
+								//*/
+	//{7, handleMoveOn},			//  TODO: Make sure the link is alive or the server is available currently.
+//};
 
 void computeStateMachine_fake(void) {
 	switch(estado)
@@ -71,62 +73,63 @@ void computeStateMachine_fake(void) {
 		case dormido:
 			//mqtt_pub_str("josepamb/feeds/welcome-feed", "dormido");
 			break;
-		
+			
 		case muestreo:
 			mqtt_pub_str("josepamb/feeds/welcome-feed", "muestreo");
-			//ACCEL_BUFF[0] = 1.23;	ACCEL_BUFF[1] = 22.34;
-			//ACCEL_BUFF[2] = 33.45;	ACCEL_BUFF[3] = 44.56;
-			//light = 0x0064; //12345d
-			//temper = 4.27;
+			//_delay_ms(1000);
+			
+			////ACCEL_BUFF[0] = 1.23;	ACCEL_BUFF[1] = 22.34;
+			////ACCEL_BUFF[2] = 33.45;	ACCEL_BUFF[3] = 44.56;
+			light++; //12345d
+			temper = temper - 0.1;
 			//puerta++;
-			if(cell_location()) //debug new
+			if(!cell_location()) //debug new
 			{
-				estado = envio;
-				break;
+				mqtt_pub_str("josepamb/feeds/welcome-feed", "mal");
+				_delay_ms(1000);
 			}
-			//snprintf(COORDS, sizeof(COORDS), "20.6467,-100.4305");// debug remove
-			//snprintf(TEMP, sizeof(TEMP), "%d,%s,0", 0, COORDS); //works			
+								
 			estado = dormido;
 			break;
 		
 		case envio: //mandar a la nube
-			mqtt_pub_str("josepamb/feeds/welcome-feed", "envio");
-			//mqtt_pub_str("josepamb/feeds/beacon.gps/csv", prueba_buff);
-			//mqtt_pub_str("josepamb/feeds/welcome-feed", TEMP); //works
-			
+			//mqtt_pub_str("josepamb/feeds/welcome-feed", "envio");
+			mqtt_pub_float("josepamb/feeds/beacon.temperature", temper); //send temperature (float)
+			_delay_ms(1000);
+			mqtt_pub_unsigned_short("josepamb/feeds/beacon.light", light); //send light data (uint16_t or unsigned short)
+			_delay_ms(1000);
+			mqtt_pub_str("josepamb/feeds/beacon.gps/csv", COORDS); //send GPS buffer (string)
+			//_delay_ms(1000);
 			//mqtt_init();
-			//if(mqtt_connect()){
-				//mqtt_pub_str("josepamb/feeds/welcome-feed", "__ START __");
-				//_delay_ms(1000);
+			//if(mqtt_init()){
 				//mqtt_pub_float("josepamb/feeds/beacon.temperature", temper); //send temperature (float)
 				//_delay_ms(1000);
 				//mqtt_pub_unsigned_short("josepamb/feeds/beacon.light", light); //send light data (uint16_t or unsigned short)
 				//_delay_ms(1000);
-				//mqtt_pub_str("josepamb/feeds/beacon.gps", COORDS); //send GPS buffer (string)
+				//mqtt_pub_str("josepamb/feeds/beacon.gps/csv", COORDS); //send GPS buffer (string)
 				//_delay_ms(1000);
-				//mqtt_pub_float("josepamb/feeds/beacon.x", ACCEL_BUFF[0]); //floats
-				//_delay_ms(3000);
-				//mqtt_pub_float("josepamb/feeds/beacon.y", ACCEL_BUFF[1]);
-				//_delay_ms(3000);
-				//mqtt_pub_float("josepamb/feeds/beacon.z", ACCEL_BUFF[2]);
-				//_delay_ms(3000);
-				////mqtt_pub_float("josepamb/feeds/beacon.temperature", ACCEL_BUFF[3]);
+				////mqtt_pub_float("josepamb/feeds/beacon.x", ACCEL_BUFF[0]); //floats
 				////_delay_ms(3000);
-				//mqtt_pub_str("josepamb/feeds/welcome-feed", "__ DONE__ ");
+				////mqtt_pub_float("josepamb/feeds/beacon.y", ACCEL_BUFF[1]);
+				////_delay_ms(3000);
+				////mqtt_pub_float("josepamb/feeds/beacon.z", ACCEL_BUFF[2]);
+				////_delay_ms(3000);
+				//////mqtt_pub_float("josepamb/feeds/beacon.temperature", ACCEL_BUFF[3]);
+				//////_delay_ms(3000);
 			//}
-			//else{
-				////mqtt_disconnect();
-				////estado = envio;
-				////break;
-			//}
+			////else{
+				//////mqtt_disconnect();
+				//////estado = arreglando;
+				//////break;
+			////}
 			//mqtt_disconnect();
 			
 			estado = dormido;
 			break;
-		
+			
 		case movimiento:
 			//mqtt_pub_str("josepamb/feeds/welcome-feed", "movimiento");
-			estado = envio;
+			estado = dormido;
 			break;
 		
 		default:
@@ -137,7 +140,7 @@ void computeStateMachine_fake(void) {
 	asm("nop");
 	asm("nop");
 }
-	
+
 /*
 void computeStateMachine(void) {
 	switch(estado)
@@ -158,7 +161,13 @@ void computeStateMachine(void) {
 			temper = MXC4005XC_Get_Temperature();
 			//temperature = ACCEL_BUFF[3]; //another option
 			light = iluminacion();
-			GPS();
+			//GPS();
+			if(cell_location()) //debug new
+			{
+				mqtt_pub_str("josepamb/feeds/welcome-feed", "bien");
+				_delay_ms(1000);
+				//TODO: append lat and lon to coords buffer
+			}
 			
 			//PORTB = 0x02;
 			estado = dormido;
@@ -171,17 +180,16 @@ void computeStateMachine(void) {
 			}
 			
 			mqtt_init();
-			mqtt_connect();
-			mqtt_connected = true; //temporal, maybe change to bg95_mqtt.c
+			//mqtt_connect(); //debug cleaning
+			//mqtt_connected = true; //temporal, remove
 			
-			//mqtt_pub_str("josepamb/feeds/bg95-mqtt-test-1", "This is a test!");
 			mqtt_pub_unsigned_short("josepamb/feeds/beacon.light", light); //send light data (uint16_t or unsigned short)
 			mqtt_pub_float("josepamb/feeds/beacon.temperature", temper); //send temperature (float)
-			mqtt_pub_str("josepamb/feeds/beacon.gps", COORDS); //just lat and lon (string)
+			mqtt_pub_str("josepamb/feeds/beacon.gps/csv", COORDS); //just lat and lon (string)
 			
 			//TODO: publish all buffers to respective topic, etc.
 			mqtt_disconnect();
-			mqtt_connected = false; //debug
+			//mqtt_connected = false; //debug remove
 			
 			//PORTB = 0x04;
 			estado = dormido;
@@ -194,8 +202,9 @@ void computeStateMachine(void) {
 			}
 			u8 interrupt_source = LeeMXC4005XC_NI(MXC4005XC_REG_INT_SRC0); //read INT source register 0x00
 			
+			//debug quitar de aqui todo lo de mqtt
 			mqtt_init();
-			mqtt_connect(); //debug quitar de aqui todo lo de mqtt
+			//mqtt_connect(); //debug cleaning
 			mqtt_pub_char("josepamb/feeds/bg95-mqtt-test-1", interrupt_source); //publish interrupt source to the cloud for debugging
 			
 			EscribeMXC4005XC_NI(MXC4005XC_REG_INT_CLR0, interrupt_source); //clear INT source bits by writing a 1 in CLR
@@ -291,8 +300,10 @@ void bg95_Init(void){
  
 /*
 bool GPS(void) {
+	char TEMP[128] = {0};
 	//TODO change to queclocator
-	DrvUSART_SendStr("AT+QGPSCFG=\"priority\",0,0"); //Prioridad a GNSS y no guardar
+	//DrvUSART_SendStr("AT+QGPSCFG=\"priority\",0,0"); //Prioridad a GNSS y no guardar
+	TRY_COMMAND("AT+QGPSCFG=\"priority\",0,0", TEMP, sizeof(TEMP));
 	_delay_ms(1000);
 	TRY_COMMAND("AT+QGPS=1", TEMP, sizeof(TEMP)); // Turn on GPS
 	TRY_COMMAND("AT+QGPSLOC?", TEMP, sizeof(TEMP)); // Get coords
@@ -300,26 +311,28 @@ bool GPS(void) {
 		TRY_COMMAND("AT+QGPSEND", TEMP, sizeof(TEMP)); // turn GPS off
 		char lat[16], lon[16];
 		sscanf(TEMP, "+QGPSLOC: %*[^,],%[^,],%*[^,],%*[^,],%[^,]", lat, lon);
-		snprintf(COORDS, sizeof(COORDS), "%s,%s", lat, lon);
+		snprintf(TEMP, sizeof(TEMP), "%s,%s", lat, lon);
 		return true;
 	}
 	return false; //no fix
 }
-
 */
+
 /* WORKS PERFECT: Try command and handle response */
 bool TRY_COMMAND(const char *command, char *buffer, size_t buffersize){
 	DrvUSART_SendStr(command);
-	processData(buffer, buffersize); // guarda respuesta en buffer
-	//processData_wait(buffer, buffersize, 5000); //or wait_time
-
-	//return handleResponse(buffer, buffersize);
+	//processData(buffer, buffersize); // guarda respuesta en buffer
+	//debug cleaning:
+	processData_wait(buffer, buffersize, 0); //or wait_time
+	//return handleResponse(buffer, buffersize); //debug cleaning
+	
 	if (strstr(buffer, "OK") != NULL) {
 		//if last command is Network related and it is NOT QMTCFG:
 		if (((strstr(lastCommand, "AT+QMT") != NULL) ||
 		(strstr(lastCommand, "AT+QCELL") != NULL) ||
 		(strstr(lastCommand, "AT+QHTTPGET") != NULL)) &&
-		(strstr(lastCommand, "AT+QMTCFG") == NULL)){
+		(strstr(lastCommand, "AT+QMTCFG") == NULL) &&
+		(strstr(lastCommand, "AT+QMTPUB") == NULL)){
 			if ((strstr(buffer, "+QMT") == NULL) ||
 			(strstr(buffer, "+QCELL") == NULL) ||
 			(strstr(buffer, "+QHTTP") == NULL)) { //if buffer does NOT contain Network response
@@ -338,37 +351,35 @@ bool TRY_COMMAND(const char *command, char *buffer, size_t buffersize){
 	}
 	//return false;
 }
-/*
-bool handleResponse(char *buffer, size_t buffersize) {
-	if (strstr(buffer, "OK") != NULL) {
-		//if last command is Network related and it is NOT QMTCFG:
-		if (((strstr(lastCommand, "AT+QMT") != NULL) ||
-			 (strstr(lastCommand, "AT+QCELL") != NULL) ||
-			 (strstr(lastCommand, "AT+QHTTPGET") != NULL)) &&
-			 (strstr(lastCommand, "AT+QMTCFG") == NULL)){
-				 if ((strstr(buffer, "+QMT") == NULL) ||
-					 (strstr(buffer, "+QCELL") == NULL) ||
-					 (strstr(buffer, "+QHTTP") == NULL)) { //if buffer does NOT contain Network response
-					 processData_wait(buffer, buffersize, 10000); //wait for +QMT response
-				 }
-				 return handleconnection(buffer, buffersize);
-		}
-		else{ //if lastcommand is NOT network related
-			return true;
-		}
-	}
-	else if(strstr(buffer, "CONNECT") != NULL) {
-		return true;
-	}
-	else {
-		return handleError(buffer, buffersize);
-	}
-	return false; // If no "OK" or "ERROR" found //debug TODO: handle here if received null/nothing from RX port
-}
-*/
+//bool handleResponse(char *buffer, size_t buffersize) {
+	//if (strstr(buffer, "OK") != NULL) {
+		////if last command is Network related and it is NOT QMTCFG:
+		//if (((strstr(lastCommand, "AT+QMT") != NULL) ||
+			 //(strstr(lastCommand, "AT+QCELL") != NULL) ||
+			 //(strstr(lastCommand, "AT+QHTTPGET") != NULL)) &&
+			 //(strstr(lastCommand, "AT+QMTCFG") == NULL)){
+				 //if ((strstr(buffer, "+QMT") == NULL) ||
+					 //(strstr(buffer, "+QCELL") == NULL) ||
+					 //(strstr(buffer, "+QHTTP") == NULL)) { //if buffer does NOT contain Network response
+					 //processData_wait(buffer, buffersize, 10000); //wait for +QMT response
+				 //}
+				 //return handleconnection(buffer, buffersize);
+		//}
+		//else{ //if lastcommand is NOT network related
+			//return true;
+		//}
+	//}
+	//else if(strstr(buffer, "CONNECT") != NULL) {
+		//return true;
+	//}
+	//else {
+		//return handleError(buffer, buffersize);
+	//}
+	//return false; // If no "OK" or "ERROR" found //debug TODO: handle here if received null/nothing from RX port
+//}
 bool handleError(char *buffer, size_t buffersize) {
 	char *errorptr = strstr(buffer, "ERROR");
-	char *urcptr = strstr(buffer, "QMTSTAT"); //if response has "+QMTSTAT..."
+	//char *urcptr = strstr(buffer, "QMTSTAT"); //if response has "+QMTSTAT..."
 	if (errorptr != NULL) {
 		if (errorptr[5] == ':') { //if error has error code
 			int errorCode = atoi(errorptr + strlen("ERROR: "));
@@ -382,18 +393,18 @@ bool handleError(char *buffer, size_t buffersize) {
 			return handleNoErrorCode(); //just "ERROR" without code
 		}
 	}
-	else if(urcptr != NULL){ //mqtt URCs
-		int errorCode = atoi(urcptr + strlen("QMTSTAT: 0,")); //obtain error code
-		for (size_t i = 0; i < sizeof(mqttURCsActions) / sizeof(mqttURCsActions[0]); i++) {
-			if (mqttURCsActions[i].code == errorCode) {
-				return mqttURCsActions[i].action(); //handle specific error code
-			}
-		}
-	}
+	//else if(urcptr != NULL){ //mqtt URCs
+		//int errorCode = atoi(urcptr + strlen("QMTSTAT: 0,")); //obtain error code
+		//for (size_t i = 0; i < sizeof(mqttURCsActions) / sizeof(mqttURCsActions[0]); i++) {
+			//if (mqttURCsActions[i].code == errorCode) {
+				//return mqttURCsActions[i].action(); //handle specific error code
+			//}
+		//}
+	//}
 	return true; // No "ERROR" nor "OK", nor error code found, buffer is empty (shouldnt enter here ever.)
 }
 
-//WORKING PERFECT!!!! (almost)
+//WORKING PERFECT!!!!
 bool cell_location(void){
 	char TEMP[128] = {0};
 	const char *ptr = TEMP;
@@ -452,7 +463,7 @@ bool cell_location(void){
 	}
 	
 	//----------- STEP 3: Use Geolocation API to approximate location for each tower -------------//
-	TRY_COMMAND("AT+QICSGP=1,3,\"internet.itelcel.com\",\"\",\"\",0", TEMP, sizeof(TEMP));
+	//TRY_COMMAND("AT+QICSGP=1,3,\"internet.itelcel.com\",\"\",\"\",0", TEMP, sizeof(TEMP)); //maybe not needed here because its in init
 	TRY_COMMAND("AT+QHTTPCFG=\"contextid\",1", TEMP, sizeof(TEMP));
 	TRY_COMMAND("AT+QIACT=1", TEMP, sizeof(TEMP));
 	TRY_COMMAND("AT+QHTTPCFG=\"sslctxid\",1", TEMP, sizeof(TEMP));
@@ -488,7 +499,7 @@ bool cell_location(void){
 	
 	//// Example response: +Location:20.6481,-100.429079,1717530038
 	//if ((ptr = strstr(TEMP, "+Location:")) != NULL) {
-		//volatile char lat[16], lon[16];
+		//char lat[16], lon[16];
 		//if (sscanf(ptr, "+Location:%[^,],%[^,],%*d", lat, lon) != 2) {
 			//return false;
 		//}
@@ -498,15 +509,41 @@ bool cell_location(void){
 	//}
 	
 	//Example response (AJAX) url: {"lon":"-100.441032","lat":"20.64126","range":"1000"}
+	//WORKS PERFECT!
 	if ((ptr = strstr(TEMP, "\"lon\":")) != NULL) {
 		char lat[16], lon[16];
 		if (sscanf(ptr, "\"lon\":\"%[^\"]\",\"lat\":\"%[^\"]\"", lat, lon) != 2) {
 			return false;
 		}
-		//debug cleaning (maybe use a TEMP for everything except lat and lon)
-		snprintf(TEMP, sizeof(TEMP), "%d,%s,%s,0", 6, lon, lat); //works! (value,lat,lon,alt)
-		mqtt_pub_str("josepamb/feeds/beacon.gps/csv", TEMP);
+		////debug cleaning (maybe use a TEMP for everything except lat and lon)
+		//snprintf(TEMP, sizeof(TEMP), "%d,%s,%s,0", 6, lon, lat); //works! (value,lat,lon,alt)
+		//mqtt_pub_str("josepamb/feeds/beacon.gps/csv", TEMP);
+		//_delay_ms(1000);
+		snprintf(COORDS, sizeof(COORDS), "%u,%s,%s,0", puerta, lon, lat);
+		//mqtt_pub_str("josepamb/feeds/beacon.gps/csv", COORDS);
+		//_delay_ms(1000);
 		return true;
 	}
+	//debug cleaning TRY THIS:
+	//if ((ptr = strstr(TEMP, "\"lon\":\"")) != NULL) {
+		//ptr += 7; // Move past "\"lon\":\""
+		//const char *lon_start = ptr;
+		//while (*ptr && *ptr != '"') {
+			//ptr++;
+		//}
+		//size_t lon_len = ptr - lon_start;
+		//if ((ptr = strstr(ptr, "\"lat\":\"")) == NULL) {
+			//return false;
+		//}
+		//ptr += 7; // Move past "\"lat\":\""
+		//const char *lat_start = ptr;
+		//while (*ptr && *ptr != '"') {
+			//ptr++;
+		//}
+		//size_t lat_len = ptr - lat_start;
+		//snprintf(COORDS, sizeof(COORDS), "%d,%.*s,%.*s,0", 3, (int)lon_len, lon_start, (int)lat_len, lat_start);
+		//return true;
+	//}
+	
 	return false;
 }

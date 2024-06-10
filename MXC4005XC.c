@@ -104,40 +104,40 @@ void MXC4005XC_GetData_real(float *data)
 }
 
 //debug??
-u8 MXC4005XC_Get_Orientation(void)
-{
-	// MXC4005XC_REG_INT_SRC1 
-	/*The ORXY[1:0] and ORZ[1:0] bits in INT_SRC1 indicate the orientation of MXC400xXC.
-	ORXY indicates orientation of the XY plane, and ORZ indicates direction of the Z axis.
-	Mapping of the orientation bits is as follows:
-	*/
-	u8 orxyz = LeeMXC4005XC_NI(MXC4005XC_REG_INT_SRC1);
-	//TILT, ORZ, ORXY[1], ORXY[0], 0, 0, 0, DRDY
-	
-	//TODO: consider the DRDY bit to check if new data is available //debug
-	//if (DRDY bit is set (0x01)){
-		////new data is available in acceleration, go and read it
+//u8 MXC4005XC_Get_Orientation(void)
+//{
+	//// MXC4005XC_REG_INT_SRC1 
+	///*The ORXY[1:0] and ORZ[1:0] bits in INT_SRC1 indicate the orientation of MXC400xXC.
+	//ORXY indicates orientation of the XY plane, and ORZ indicates direction of the Z axis.
+	//Mapping of the orientation bits is as follows:
+	//*/
+	//u8 orxyz = LeeMXC4005XC_NI(MXC4005XC_REG_INT_SRC1);
+	////TILT, ORZ, ORXY[1], ORXY[0], 0, 0, 0, DRDY
+	//
+	////TODO: consider the DRDY bit to check if new data is available //debug
+	////if (DRDY bit is set (0x01)){
+		//////new data is available in acceleration, go and read it
+	////}
+	//return orxyz;
+//}
+//
+////Should work but debug
+//void MXC4005XC_Get_Acceleration(u8 data[6])
+//{
+	////MXC4005_REG_XOUT_UPPER, etc
+	///*XOUT[11:0] is the 12-bit X-axis acceleration output.
+	//The output is in 2's complement format, with a range of ?2048 to +2047.
+	//*/
+	//data[0] = LeeMXC4005XC_NI(MXC4005_REG_XOUT_UPPER); //X upper
+	//data[1] = LeeMXC4005XC_NI(MXC4005_REG_XOUT_LOWER); //X lower
+	//data[2] = LeeMXC4005XC_NI(MXC4005_REG_YOUT_UPPER); //Y upper
+	//data[3] = LeeMXC4005XC_NI(MXC4005_REG_YOUT_LOWER); //Y lower
+	//data[4] = LeeMXC4005XC_NI(MXC4005_REG_ZOUT_UPPER); //Z upper
+	//data[5] = LeeMXC4005XC_NI(MXC4005_REG_ZOUT_LOWER); //Z lower
+	//for (uint8_t i = 0; i < 6; i++) {
+		//data[i] = (float)data[i] / MXC4005XC_2G_SENSITIVITY; // convert acceleration to g
 	//}
-	return orxyz;
-}
-
-//Should work but debug
-void MXC4005XC_Get_Acceleration(u8 data[6])
-{
-	//MXC4005_REG_XOUT_UPPER, etc
-	/*XOUT[11:0] is the 12-bit X-axis acceleration output.
-	The output is in 2's complement format, with a range of ?2048 to +2047.
-	*/
-	data[0] = LeeMXC4005XC_NI(MXC4005_REG_XOUT_UPPER); //X upper
-	data[1] = LeeMXC4005XC_NI(MXC4005_REG_XOUT_LOWER); //X lower
-	data[2] = LeeMXC4005XC_NI(MXC4005_REG_YOUT_UPPER); //Y upper
-	data[3] = LeeMXC4005XC_NI(MXC4005_REG_YOUT_LOWER); //Y lower
-	data[4] = LeeMXC4005XC_NI(MXC4005_REG_ZOUT_UPPER); //Z upper
-	data[5] = LeeMXC4005XC_NI(MXC4005_REG_ZOUT_LOWER); //Z lower
-	for (uint8_t i = 0; i < 6; i++) {
-		data[i] = (float)data[i] / MXC4005XC_2G_SENSITIVITY; // convert acceleration to g
-	}
-}
+//}
 
 //Should work
 float MXC4005XC_Get_Temperature(void)

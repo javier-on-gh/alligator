@@ -13,13 +13,16 @@ extern float ACCEL_BUFF[4];
 
 // ** TESTING CLOUD ** //
 #define COMMAND_BUFF_SIZE 128
-char ATcommand[COMMAND_BUFF_SIZE];  // temporary buffer to hold ATcommand
+//debug cleaning:
+//char ATcommand[COMMAND_BUFF_SIZE];  // temporary buffer to hold ATcommand
 
 //extern char TEMP[128]; //debug cleaning
 
 //nothing for now:
-void mqtt_init(void){
-	//TODO: CAMBIAR POR TRYCOMMAND
+bool mqtt_init(void){
+	char TEMP[128] = {0};
+	//TODO: CAMBIAR TODO POR TRYCOMMAND
+	
 	//DrvUSART_SendStr("AT+QGPSCFG=\"priority\",1,1"); //Prioridad a WWAN //already in init
 	//query some data beforehand
 	//// Turn on full cellular functionality
@@ -62,11 +65,8 @@ void mqtt_init(void){
 	////AT+QMTCFG="pdpcid",<client_idx>[,<cid>] AT+QMTCFG="pdpcid",0,1
 	DrvUSART_SendStr("AT+QMTCFG=\"pdpcid\",0,1");
 	//AT+QMTCFG="ssl",<client_idx>[,<SSL_enable>[,<ctx_index>]] AT+QMTCFG="ssl",0,1,0
-	DrvUSART_SendStr("AT+QMTCFG=\"ssl\",0,1,0");
-}
-
-bool mqtt_connect(void){
-	char TEMP[128] = {0};
+	TRY_COMMAND("AT+QMTCFG=\"ssl\",0,1,0", TEMP, sizeof(TEMP));
+	
 	//----- Open the client
 	bool opened = TRY_COMMAND("AT+QMTOPEN=0,\"io.adafruit.com\",8883", TEMP, sizeof(TEMP));
 	//DrvUSART_SendStr("AT+QMTOPEN=0,\"io.adafruit.com\",8883");
@@ -79,14 +79,24 @@ bool mqtt_connect(void){
 	else{
 		return false;
 	}
-	//sendATCommands("AT+QMTCONN?");
-	//if(strstr(TEMP, "+QMTCONN: 0,0,0") == NULL){
-	//sendATCommands("AT+QMTCLOSE=0");
-	//sendATCommands("AT+QMTDISC=0");
-	//
-	////return false;
-	//}
 }
+
+//debug cleaning
+//bool mqtt_connect(void){
+	//char TEMP[128] = {0};
+	////----- Open the client
+	//bool opened = TRY_COMMAND("AT+QMTOPEN=0,\"io.adafruit.com\",8883", TEMP, sizeof(TEMP));
+	////DrvUSART_SendStr("AT+QMTOPEN=0,\"io.adafruit.com\",8883");
+	//
+	////sendATCommands("AT+QMTOPEN?"); //to check if its connected
+	//if(opened){
+		//return TRY_COMMAND("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"", TEMP, sizeof(TEMP));
+		////DrvUSART_SendStr("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"");
+	//}
+	//else{
+		//return false;
+	//}
+//}
 
 //-----Publishing messages----
 //AT+QMTPUB=<client_idx>,<msgID>,<qos>,<retain>,<topic>
@@ -102,6 +112,7 @@ bool mqtt_connect(void){
 //}
 //debug cleaning
 void mqtt_pub_str(const char *topic, const char *message) {
+	char ATcommand[COMMAND_BUFF_SIZE];
 	char TEMP[128] = {0};
 	size_t idx = 0;
 	const char *prefix = "AT+QMTPUBEX=0,1,1,0,\"";
@@ -143,23 +154,9 @@ void mqtt_pub_str(const char *topic, const char *message) {
 	//DrvUSART_SendStr(ATcommand);
 	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
-
-/*
-
-void mqtt_pub_char(const char *topic, const char message){
-	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%x\"", topic, message);
-	DrvUSART_SendStr(ATcommand);
-}
-void mqtt_pub_unsigned_short(const char *topic, const unsigned short message){
-	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%x\"", topic, message);
-	DrvUSART_SendStr(ATcommand);
-	//TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
-}
-void mqtt_pub_int(const char *topic, const int message){
-	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%d\"", topic, message);
-	DrvUSART_SendStr(ATcommand);
-}
 void mqtt_pub_float(const char *topic, const float message){
+	char ATcommand[COMMAND_BUFF_SIZE];
+	char TEMP[128] = {0};
 	////for some reason sprintf does not work here:
 	//sprintf(ATcommand, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%.2f\"", topic, message); //doesnt work
 	int integer_part = (int)message;
@@ -168,11 +165,33 @@ void mqtt_pub_float(const char *topic, const float message){
 	if (fractional_part < 0) {
 		fractional_part = -fractional_part;
 	}
+	//1 WORKS EXCEPT FOR NEGATIVE 0 (-0.1 shows 0.1)
+	//snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%d.%02d\"", topic, integer_part, fractional_part);
+	//2 WORKS NICE (-0.1 shows correctly)
+	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%s%d.%02d\"",
+	topic, (message < 0 && integer_part == 0) ? "-" : "", integer_part, fractional_part);
 	
-	//AT+QMTPUBEX=0,0,0,0,"josepamb/feeds/beacon.light","3039"
-	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%d.%02d\"", topic, integer_part, fractional_part);
+	
+	//DrvUSART_SendStr(ATcommand);
+	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
+}
+void mqtt_pub_unsigned_short(const char *topic, const unsigned short message){
+	char ATcommand[COMMAND_BUFF_SIZE];
+	char TEMP[128] = {0};
+	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%u\"", topic, message);
+	//DrvUSART_SendStr(ATcommand);
+	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
+}
+
+/*
+
+void mqtt_pub_char(const char *topic, const char message){
+	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%x\"", topic, message);
 	DrvUSART_SendStr(ATcommand);
-	//TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
+}
+void mqtt_pub_int(const char *topic, const int message){
+	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%d\"", topic, message);
+	DrvUSART_SendStr(ATcommand);
 }
 
 //for observing acceleration data in cloud
