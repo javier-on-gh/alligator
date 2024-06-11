@@ -12,9 +12,13 @@ ISR(INT0_vect){
 	//interrupcion de acelerometro INT pin
 	//1 leer registro STATUS o INT_SRC0 podria ser aqui pero funcion para leer tiene busy waits
 	//2 if cambio: estado = movimiento
-	estado = movimiento; //aqui se hace todo lo de leer data, clear, etc (mas limpio creo)
 	//3 escribir 1 en posicion de INT_CLR0 para hacer clear en esa especifica posicion
 	// Toda la rutina se hace en "movimiento" para no atorar en ISR()
+	
+	//debug try this below?
+	//u8 interrupt_source = LeeMXC4005XC_NI(MXC4005XC_REG_INT_SRC0); //read INT source register 0x00
+	//EscribeMXC4005XC_NI(MXC4005XC_REG_INT_CLR0, interrupt_source); //clear INT source bits by writing a 1 in CLR
+	estado = movimiento; //aqui se hace todo lo de leer data, clear, etc (mas limpio creo)
 }
 
 void MXC4005XC_init(void){

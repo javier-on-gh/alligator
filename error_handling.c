@@ -65,7 +65,7 @@ bool handleconnection(char *buffer, size_t buffersize){
 			// 2 MQTT client identifier is occupied
 			//DrvUSART_SendStr("AT+QMQTCLOSE=0");
 			//DrvUSART_SendStr("AT+QIDEACT=1");
-			return false; // try again
+			return true; // try again
 		}
 		else if(strstr(buffer, "+QMTOPEN: 0,3")){
 			// 3 Failed to activate PDP
@@ -97,7 +97,7 @@ bool handleconnection(char *buffer, size_t buffersize){
 			return true; // debug handle here maybe restart module?
 		}
 		else{
-			return false; //try again
+			return true; //try again
 		}
 	}
 	

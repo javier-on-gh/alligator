@@ -22,19 +22,7 @@ extern float ACCEL_BUFF[4];
 bool mqtt_init(void){
 	char TEMP[128] = {0};
 	//TODO: CAMBIAR TODO POR TRYCOMMAND
-	
-	//DrvUSART_SendStr("AT+QGPSCFG=\"priority\",1,1"); //Prioridad a WWAN //already in init
-	//query some data beforehand
-	//// Turn on full cellular functionality
-	//sendATCommands("AT+CFUN=1");
-	//// Query network registration status (0,1=Registered, on home network; 0,5=Registered, roaming) other - not connected
-	//sendATCommands("AT+CEREG?");
-	//// Query network technology and carrier:
-	//sendATCommands("AT+COPS?");
-	//// Query Network Information
-	//sendATCommands("AT+QNWINFO");
-	//// Check the received signal strength
-	//sendATCommands("AT+QCSQ");
+	//wait for network to respond debug
 	
 	/*
 		APN:	internet.itelcel.com
@@ -45,64 +33,28 @@ bool mqtt_init(void){
 		//AT+QICSGP=<contextID>[,<context_type>,<APN>[,<username>,<password>[,<authentication>]]]
 	*/
 	////PDP context: AT+QICSGP=<contextID>[,<context_type>,<APN>[,<username>,<password>[,<authentication>]]]
-	//ORIGINAL: AT+QICSGP=1,3,"internet.itelcel.com","","",1
-	//DrvUSART_SendStr("AT+QICSGP=1,3,\"internet.itelcel.com\",\"\",\"\",0"); //already in init
-	//Activate PDP context
-	DrvUSART_SendStr("AT+QIACT=1"); //debug change to try command and bools
-	//Check if activated
-	//DrvUSART_SendStr("AT+QIACT?"); //if buffer has
 	
-	//SSL authentication version AT+QSSLCFG="sslversion",0,4
-	DrvUSART_SendStr("AT+QSSLCFG=\"sslversion\",0,4");
-	//Cipher suite AT+QSSLCFG="ciphersuite",0,0XFFFF
-	DrvUSART_SendStr("AT+QSSLCFG=\"ciphersuite\",0,0XFFFF");
-	//Configure the authentication mode for SSL context 0. (ignore for now)
-	//AT+QSSLCFG="seclevel",0,0
-	DrvUSART_SendStr("AT+QSSLCFG=\"seclevel\",0,0");
-	//Ignore the time of authentication. AT+QSSLCFG="ignorelocaltime",0,1
-	DrvUSART_SendStr("AT+QSSLCFG=\"ignorelocaltime\",0,1");
+	
+	TRY_COMMAND("AT+QIACT=1", TEMP, sizeof(TEMP)); //Activate PDP context
+	////DEBUG MODIFY THIS:
+	//TRY_COMMAND("AT+QIACT?", TEMP, sizeof(TEMP)); //Check if activated
+	//if(strstr(TEMP, "+QIACT: 1,1") == NULL){
+		//return false;
+	//}
 	
 	////AT+QMTCFG="pdpcid",<client_idx>[,<cid>] AT+QMTCFG="pdpcid",0,1
-	DrvUSART_SendStr("AT+QMTCFG=\"pdpcid\",0,1");
-	//AT+QMTCFG="ssl",<client_idx>[,<SSL_enable>[,<ctx_index>]] AT+QMTCFG="ssl",0,1,0
+	TRY_COMMAND("AT+QMTCFG=\"pdpcid\",0,1", TEMP, sizeof(TEMP));
 	TRY_COMMAND("AT+QMTCFG=\"ssl\",0,1,0", TEMP, sizeof(TEMP));
 	
 	//----- Open the client
-	bool opened = TRY_COMMAND("AT+QMTOPEN=0,\"io.adafruit.com\",8883", TEMP, sizeof(TEMP));
-	//DrvUSART_SendStr("AT+QMTOPEN=0,\"io.adafruit.com\",8883");
-	
-	//sendATCommands("AT+QMTOPEN?"); //to check if its connected
-	if(opened){
+	if(TRY_COMMAND("AT+QMTOPEN=0,\"io.adafruit.com\",8883", TEMP, sizeof(TEMP))){
 		return TRY_COMMAND("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"", TEMP, sizeof(TEMP));
-		//DrvUSART_SendStr("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"");
 	}
 	else{
 		return false;
 	}
 }
 
-//debug cleaning
-//bool mqtt_connect(void){
-	//char TEMP[128] = {0};
-	////----- Open the client
-	//bool opened = TRY_COMMAND("AT+QMTOPEN=0,\"io.adafruit.com\",8883", TEMP, sizeof(TEMP));
-	////DrvUSART_SendStr("AT+QMTOPEN=0,\"io.adafruit.com\",8883");
-	//
-	////sendATCommands("AT+QMTOPEN?"); //to check if its connected
-	//if(opened){
-		//return TRY_COMMAND("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"", TEMP, sizeof(TEMP));
-		////DrvUSART_SendStr("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"");
-	//}
-	//else{
-		//return false;
-	//}
-//}
-
-//-----Publishing messages----
-//AT+QMTPUB=<client_idx>,<msgID>,<qos>,<retain>,<topic>
-//debug try msgID = 1, qos = 1 or msgID = 0, qos = 0
-
-//NOTE: message should be short!!!
 //void mqtt_pub_str(const char *topic, const char *message){
 	//char TEMP[128] = {0};
 	//snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%s\"", topic, message);
@@ -182,13 +134,54 @@ void mqtt_pub_unsigned_short(const char *topic, const unsigned short message){
 	//DrvUSART_SendStr(ATcommand);
 	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
+void mqtt_pub_char(const char *topic, const char message){
+	char ATcommand[COMMAND_BUFF_SIZE];
+	char TEMP[128] = {0};
+	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%x\"", topic, message);
+	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
+}
+
+//test:
+/*
+void mqtt_pub_char(const char *topic, const char message) {
+	char ATcommand[COMMAND_BUFF_SIZE];
+	char TEMP[128] = {0};
+	const char *prefix = "AT+QMTPUBEX=0,1,1,0,\"";
+	const char *suffix = "\",\"";
+
+	// Copy the prefix
+	char *ptr = ATcommand;
+	while (*prefix) {
+		*ptr++ = *prefix++;
+	}
+
+	// Copy the topic
+	while (*topic) {
+		*ptr++ = *topic++;
+	}
+
+	// Copy the middle part of the command
+	const char *middle = suffix;
+	while (*middle) {
+		*ptr++ = *middle++;
+	}
+
+	// Convert the character to hexadecimal and copy it
+	static const char hex_digits[] = "0123456789ABCDEF";
+	*ptr++ = hex_digits[(message >> 4) & 0xF];
+	*ptr++ = hex_digits[message & 0xF];
+
+	// Copy the closing quote
+	*ptr++ = '\"';
+
+	// Null-terminate the string
+	*ptr = '\0';
+
+	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
+}
+*/
 
 /*
-
-void mqtt_pub_char(const char *topic, const char message){
-	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%x\"", topic, message);
-	DrvUSART_SendStr(ATcommand);
-}
 void mqtt_pub_int(const char *topic, const int message){
 	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%d\"", topic, message);
 	DrvUSART_SendStr(ATcommand);

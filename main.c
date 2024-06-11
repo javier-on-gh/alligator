@@ -38,18 +38,17 @@ ISR(WDT_vect)
 	cntTM++;
 	cntTE++;
 	
-	if (cntTE==26)//2700) // Actualiza la nube cada 24 horas //debug new
+	//else if gives priority to the first conditional
+	if (cntTE==55)//2700) // Actualiza la nube cada 24 horas //debug new
 	{
 		cntTE = 0;
 		estado = envio;
 	}
-	else if (cntTM==10)//(cntTM==113) // Muestrea sensores cada hora
+	else if (cntTM==23)//(cntTM==113) // Muestrea sensores cada hora
 	{
 		cntTM = 0;
 		estado = muestreo;
 	}
-	//else if gives priority to the first conditional
-	
 }
 
 int main(void)
@@ -85,17 +84,12 @@ int main(void)
 	DDRC |= (1 << PORTC3); //POWER PORT
 			
 	//bg95_On(); //debug new
-	//bg95_Init();
-	mqtt_pub_str("josepamb/feeds/welcome-feed", "------START------");
-	//_delay_ms(2000);
-	
-	////show the size of a data type
-	//char str[4]={0};
-	//snprintf(str, sizeof(str), "%u", sizeof(int));
-	//mqtt_pub_str("josepamb/feeds/welcome-feed", str);
+	bg95_Init();
+	//PORTB = 0x04;
 	
 	while (1)
 	{
 		computeStateMachine_fake();
+		//computeStateMachine(); //real SM
 	}
 }

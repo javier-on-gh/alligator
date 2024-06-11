@@ -175,8 +175,8 @@ void processData_wait(char *buff, size_t buffsize, int timeout_ms) {
 			//i++;
 		}
 		else if (rxBuffer[rxReadPos] == '\n') {
-			buff[i] = rxBuffer[rxReadPos]; //store line feeds for separating string
-			i++;
+			//buff[i] = rxBuffer[rxReadPos]; //store line feeds for separating string
+			//i++;
 		}
 		else {
 			buff[i] = rxBuffer[rxReadPos]; //store response
