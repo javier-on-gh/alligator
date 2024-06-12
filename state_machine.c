@@ -15,16 +15,12 @@
 #include "bg95_mqtt.h"
 #include "MXC4005XC.h"
 
-//bool bg95_on = false;
-//bool mqtt_connected = false;
-//char TEMP[128] = {0}; //global buffer not a great idea remove
-
 ////These must be global:
 u16 light = 0x0000;		//2 bytes
 float temper = 0.0;		//4 bytes
 int puerta = 0;		//2 bytes
 char COORDS[32] = {0};	//32 bytes
-float ACCEL_BUFF[4] = {0}; //accelerometer buffer //debug cambiar por char? remove
+float ACCEL_BUFF[4] = {0}; //debug remove
 
 extern char lastCommand[20]; //20 bytes
 
@@ -42,29 +38,29 @@ ERROR errorActions[] = { //ERROR codes handling
 	{516, handleRetry},		//No fix, try again
 	{549, handleMoveOn},	//Unknown error, continue
 };
+/*
+ERROR mqttURCsActions[] = {
+	//MQTT URCs
+	{1, handleMoveOn},			//  TODO: handlemqttconnection
+	{2, handleMoveOn},			//  TODO: Deactivate PDP first, and then activate PDP and reopen MQTT connection.
+	{3, handleMoveOn},			//	TODO:
+									//1. Check whether the inputted user name and	password are correct.
+									//2. Make sure the client ID is not used.
+									//3. Reopen MQTT connection and try to send CONNECT packet to the server again.}
+	
+	{4, handleMoveOn},			//	TODO:
+									//1. Check whether the inputted user name and	password are correct.
+									//2. Make sure the client ID is not used.
+									//3. Reopen MQTT connection and try to send CONNECT packet to the server again.}
 
-//ERROR mqttURCsActions[] = {
-	////MQTT URCs
-	//{1, handleMoveOn},	//  TODO: handlemqttconnection
-	//{2, handleMoveOn},			//  TODO: Deactivate PDP first, and then activate PDP and reopen MQTT connection.
-	//{3, handleMoveOn},			/*	TODO:
-									//1. Check whether the inputted user name and	password are correct.
-									//2. Make sure the client ID is not used.
-									//3. Reopen MQTT connection and try to send CONNECT packet to the server again.}
-								//*/
-	//
-	//{4, handleMoveOn},			/*	TODO:
-									//1. Check whether the inputted user name and	password are correct.
-									//2. Make sure the client ID is not used.
-									//3. Reopen MQTT connection and try to send CONNECT packet to the server again.}
-								//*/
-	//{5, handleMoveOn},			//  Normal, move on
-	//{6, handleMoveOn},			/*	TODO:
+	{5, handleMoveOn},			//  Normal, move on
+	{6, handleMoveOn},			//	TODO:
 									//1. Make sure the data is correct.
 									//2. Try to reopen MQTT connection since there may be network congestion or an error.
-								//*/
-	//{7, handleMoveOn},			//  TODO: Make sure the link is alive or the server is available currently.
-//};
+
+	{7, handleMoveOn},			//  TODO: Make sure the link is alive or the server is available currently.
+};
+*/
 
 //SM FINAL:
 /*
@@ -81,9 +77,9 @@ void computeStateMachine(void) {
 			//temperature = ACCEL_BUFF[3]; //another option
 			light = iluminacion();
 			//GPS();
-			if(!cell_location()) //debug new
+			if(!cell_location())
 			{
-				//estado = reparando;
+				//estado = reparando; //debug new
 				//break;
 			}
 		
@@ -125,13 +121,15 @@ void computeStateMachine(void) {
 	asm("nop");
 }
 */
-//WORKS PERFECT, FOR TESTING:
+
+//SMFake WORKS PERFECT, FOR TESTING:
+/*
 void computeStateMachine_fake(void) {
 	switch(estado)
 	{
 		case dormido:
 			//mqtt_pub_str("josepamb/feeds/welcome-feed", "dormido");
-			PORTB = 0x00; //remove (buzzer)
+			//PORTB = 0x00; //remove (buzzer)
 			break;
 			
 		case muestreo:
@@ -143,10 +141,11 @@ void computeStateMachine_fake(void) {
 			light++; //12345d
 			temper = temper - 0.1;
 			puerta++;
-			if(!cell_location()) //debug new
+			if(!cell_location())
 			{
 				//mqtt_pub_str("josepamb/feeds/welcome-feed", "GPS mal!");
 				//_delay_ms(1000);
+				////estado = arreglando //debug new
 			}
 								
 			estado = dormido;
@@ -183,7 +182,7 @@ void computeStateMachine_fake(void) {
 			//}
 			mqtt_disconnect();
 			
-			PORTB = 0x04; //remove (buzzer)
+			//PORTB = 0x04; //remove (buzzer)
 			estado = dormido;
 			break;
 			
@@ -200,8 +199,8 @@ void computeStateMachine_fake(void) {
 	asm("nop");
 	asm("nop");
 }
-//SM DE DEPURACION:
-/*
+*/
+//SMFake DEPURACION en tarjeta real:
 void computeStateMachine_fake(void) {
 	//mainly for testing accelerometer (movimiento)
 	switch(estado)
@@ -211,21 +210,37 @@ void computeStateMachine_fake(void) {
 			
 		case muestreo:
 			mqtt_pub_str("josepamb/feeds/welcome-feed", "muestreo");
-			_delay_ms(1000);
+			//_delay_ms(1000);
+			if(!cell_location())
+			{
+				//mqtt_pub_str("josepamb/feeds/welcome-feed", "GPS mal!");
+				//_delay_ms(1000);
+			}
 			//light++;
 			//temper = temper - 0.1;
-			//if(!cell_location())
-			//{
-				////mqtt_pub_str("josepamb/feeds/welcome-feed", "GPS mal!");
-				////_delay_ms(1000);
-			//}
+			temper = MXC4005XC_Get_Temperature();
+			light = iluminacion();
+			MXC4005XC_GetData_real(ACCEL_BUFF);
 								
 			estado = dormido;
 			break;
 		
 		case envio:
-			mqtt_pub_str("josepamb/feeds/welcome-feed", "envio");
+			//if(mqtt_init()){
+				//mqtt_pub_str("josepamb/feeds/welcome-feed", "envio");
+				//_delay_ms(1000);
+			//}
+			//mqtt_pub_str("josepamb/feeds/welcome-feed", "envio");
+			//_delay_ms(1000);
+			
+			mqtt_pub_float("josepamb/feeds/beacon.temperature", temper);
 			_delay_ms(1000);
+			mqtt_pub_float("josepamb/feeds/beacon.temperature", ACCEL_BUFF[3]);
+			_delay_ms(1000);
+			mqtt_pub_float("josepamb/feeds/beacon.light", light);
+			_delay_ms(1000);
+			mqtt_pub_str("josepamb/feeds/beacon.gps/csv", COORDS); //send GPS buffer (string)
+			
 			estado = dormido;
 			break;
 			
@@ -233,19 +248,75 @@ void computeStateMachine_fake(void) {
 			mqtt_pub_str("josepamb/feeds/welcome-feed", "movimiento");
 			_delay_ms(1000);
 			
-			u8 interrupt_source = LeeMXC4005XC_NI(MXC4005XC_REG_INT_SRC0); //read INT source register 0x00
-			mqtt_pub_char("josepamb/feeds/bg95-mqtt-test-1", interrupt_source); //publish interrupt source to the cloud for debugging
-			EscribeMXC4005XC_NI(MXC4005XC_REG_INT_CLR0, interrupt_source); //clear INT source bits by writing a 1 in CLR
-			mqtt_pub_char("josepamb/feeds/bg95-mqtt-test-1", interrupt_source); //debug to see if it got cleared
-			
-			MXC4005XC_GetData_real(ACCEL_BUFF); //Accel is a float array size 4 to store accel X, Y, Z and TEMP
-			
-			mqtt_pub_float("josepamb/feeds/beacon.x", ACCEL_BUFF[0]);
-			mqtt_pub_float("josepamb/feeds/beacon.y", ACCEL_BUFF[1]);
-			mqtt_pub_float("josepamb/feeds/beacon.z", ACCEL_BUFF[2]);
-			mqtt_pub_float("josepamb/feeds/beacon.temperature", ACCEL_BUFF[3]);
+			//u8 interrupt_source = LeeMXC4005XC_NI(MXC4005XC_REG_INT_SRC0); //read INT source register 0x00
+			//mqtt_pub_char("josepamb/feeds/bg95-mqtt-test-1", interrupt_source); //publish interrupt source to the cloud for debugging
+			//_delay_ms(1000);
+			//EscribeMXC4005XC_NI(MXC4005XC_REG_INT_CLR0, interrupt_source); //clear INT source bits by writing a 1 in CLR
+			//mqtt_pub_char("josepamb/feeds/bg95-mqtt-test-1", interrupt_source); //debug to see if it got cleared
+			//_delay_ms(1000);
+			//
+			//MXC4005XC_GetData_real(ACCEL_BUFF); //Accel is a float array size 4 to store accel X, Y, Z and TEMP
+			//mqtt_pub_float("josepamb/feeds/beacon.x", ACCEL_BUFF[0]);
+			//_delay_ms(2000);
+			//mqtt_pub_float("josepamb/feeds/beacon.y", ACCEL_BUFF[1]);
+			//_delay_ms(2000);
+			//mqtt_pub_float("josepamb/feeds/beacon.z", ACCEL_BUFF[2]);
+			//_delay_ms(2000);
+			//mqtt_pub_float("josepamb/feeds/beacon.temperature", ACCEL_BUFF[3]);
+			//_delay_ms(2000);
 			
 			puerta++;
+			
+			estado = dormido;
+			break;
+		
+		default:
+			estado = dormido;
+			break;
+	}
+	asm("sleep");
+	asm("nop");
+	asm("nop");
+}
+
+//SMFAKE solo enviando estado:
+/*
+void computeStateMachine_fake(void) {
+	switch(estado)
+	{
+		case dormido:
+			break;
+			
+		case muestreo:
+			mqtt_pub_str("josepamb/feeds/welcome-feed", "muestreo");
+											
+			estado = dormido;
+			break;
+		
+		case envio:
+			mqtt_pub_str("josepamb/feeds/welcome-feed", "envio");
+
+			
+			//u8 interrupt_source = LeeMXC4005XC_NI(MXC4005XC_REG_INT_SRC0); //read INT source register 0x00
+			//mqtt_pub_char("josepamb/feeds/bg95-mqtt-test-1", interrupt_source); //publish interrupt source to the cloud for debugging
+			//_delay_ms(1000);
+			//EscribeMXC4005XC_NI(MXC4005XC_REG_INT_CLR0, interrupt_source); //clear INT source bits by writing a 1 in CLR
+			//mqtt_pub_char("josepamb/feeds/bg95-mqtt-test-1", interrupt_source); //debug to see if it got cleared
+			//_delay_ms(1000);
+			
+			//u8 interrupt_source2 = LeeMXC4005XC_NI(MXC4005XC_REG_INT_SRC1); //read INT source register 0x00
+			//mqtt_pub_char("josepamb/feeds/bg95-mqtt-test-1", interrupt_source2); //publish interrupt source to the cloud for debugging
+			//_delay_ms(1000);
+			//EscribeMXC4005XC_NI(MXC4005XC_REG_INT_CLR1, interrupt_source2); //clear INT source bits by writing a 1 in CLR
+			//mqtt_pub_char("josepamb/feeds/bg95-mqtt-test-1", interrupt_source2); //debug to see if it got cleared
+			//_delay_ms(1000);
+			
+			estado = dormido;
+			break;
+			
+		case movimiento:
+			mqtt_pub_str("josepamb/feeds/welcome-feed", "movimiento");
+			_delay_ms(1000);
 			
 			estado = dormido;
 			break;
@@ -275,7 +346,7 @@ u16 iluminacion(void){
 	//DrvUSART_SendChar(b);
 	ADCSRA &= ~(1 << ADEN); //Deshabilita modulo ADC
 	PORTB &= ~(1 << PORTB5); // desenergiza ALS-PT19
-	//TODO: almacenar o promediar o notificar //debug
+	//TODO: almacenar o promediar o notificar
 	return luz;
 }
 
@@ -284,7 +355,6 @@ void bg95_On(void){
 	_delay_ms(600);
 	PORTC &= ~(1 << PORTC3);
 	_delay_ms(5000); // until led blinks
-	//bg95_on = true; //flag on //debug cleaning
 }
 
 void bg95_Init(void){
@@ -317,11 +387,12 @@ void bg95_Init(void){
 	//BOTH HTTP AND MQTT TOGETHER
 	TRY_COMMAND("AT+QGPSCFG=\"priority\",1,1;+QICSGP=1,3,\"internet.itelcel.com\",\"\",\"\",0;+QHTTPCFG=\"contextid\",1;+QHTTPCFG=\"sslctxid\",1;+QSSLCFG=\"sslversion\",1,4;+QSSLCFG=\"ciphersuite\",1,0xFFFF;+QSSLCFG=\"seclevel\",1,0;+QSSLCFG=\"sslversion\",0,4;+QSSLCFG=\"ciphersuite\",0,0xFFFF;+QSSLCFG=\"seclevel\",0,0;+QSSLCFG=\"ignorelocaltime\",0,1", TEMP, sizeof(TEMP));
 }
- 
+
+//GNSS: 
 /*
 bool GPS(void) {
 	char TEMP[128] = {0};
-	//TODO change to queclocator
+	//Maybe change to queclocator
 	//DrvUSART_SendStr("AT+QGPSCFG=\"priority\",0,0"); //Prioridad a GNSS y no guardar
 	TRY_COMMAND("AT+QGPSCFG=\"priority\",0,0", TEMP, sizeof(TEMP));
 	_delay_ms(1000);
@@ -341,28 +412,8 @@ bool GPS(void) {
 /* WORKS PERFECT: Try command and handle response */
 bool TRY_COMMAND(const char *command, char *buffer, size_t buffersize){
 	DrvUSART_SendStr(command);
-	//processData(buffer, buffersize); // guarda respuesta en buffer
-	//debug cleaning:
 	processData_wait(buffer, buffersize, 0); //or wait_time
-	//return handleResponse(buffer, buffersize); //debug cleaning
 	
-	//if (strstr(buffer, "OK") != NULL) {
-		////if last command is Network related and it is NOT QMTCFG:
-		//if (((strstr(lastCommand, "AT+QMT") != NULL) ||
-		//(strstr(lastCommand, "AT+QCELL") != NULL) ||
-		//(strstr(lastCommand, "AT+QHTTPGET") != NULL)) &&
-		//(strstr(lastCommand, "AT+QMTCFG") == NULL) &&
-		//(strstr(lastCommand, "AT+QMTPUB") == NULL)){
-			//if ((strstr(buffer, "+QMT") == NULL) ||
-			//(strstr(buffer, "+QCELL") == NULL) ||
-			//(strstr(buffer, "+QHTTP") == NULL)) { //if buffer does NOT contain Network response
-				//processData_wait(buffer, buffersize, 15000); //wait for +QMT response
-			//}
-			//return handleconnection(buffer, buffersize);
-		//}
-		////if lastcommand is NOT network related
-		//return true;
-	//}
 	if (strstr(buffer, "OK") != NULL) {
 		//if last command is Network related and it is NOT QMTCFG:
 		if ((strstr(lastCommand, "AT+QMTOPEN") != NULL) ||
@@ -376,8 +427,7 @@ bool TRY_COMMAND(const char *command, char *buffer, size_t buffersize){
 			}
 			return handleconnection(buffer, buffersize);
 		}
-		//if lastcommand is NOT network related
-		return true;
+		return true; //if lastcommand is NOT network related
 	}
 	else if(strstr(buffer, "CONNECT") != NULL) {
 		return true;
@@ -385,34 +435,8 @@ bool TRY_COMMAND(const char *command, char *buffer, size_t buffersize){
 	else {
 		return handleError(buffer, buffersize);
 	}
-	//return false;
 }
-//bool handleResponse(char *buffer, size_t buffersize) {
-	//if (strstr(buffer, "OK") != NULL) {
-		////if last command is Network related and it is NOT QMTCFG:
-		//if (((strstr(lastCommand, "AT+QMT") != NULL) ||
-			 //(strstr(lastCommand, "AT+QCELL") != NULL) ||
-			 //(strstr(lastCommand, "AT+QHTTPGET") != NULL)) &&
-			 //(strstr(lastCommand, "AT+QMTCFG") == NULL)){
-				 //if ((strstr(buffer, "+QMT") == NULL) ||
-					 //(strstr(buffer, "+QCELL") == NULL) ||
-					 //(strstr(buffer, "+QHTTP") == NULL)) { //if buffer does NOT contain Network response
-					 //processData_wait(buffer, buffersize, 10000); //wait for +QMT response
-				 //}
-				 //return handleconnection(buffer, buffersize);
-		//}
-		//else{ //if lastcommand is NOT network related
-			//return true;
-		//}
-	//}
-	//else if(strstr(buffer, "CONNECT") != NULL) {
-		//return true;
-	//}
-	//else {
-		//return handleError(buffer, buffersize);
-	//}
-	//return false; // If no "OK" or "ERROR" found //debug TODO: handle here if received null/nothing from RX port
-//}
+
 bool handleError(char *buffer, size_t buffersize) {
 	char *errorptr = strstr(buffer, "ERROR");
 	//char *urcptr = strstr(buffer, "QMTSTAT"); //if response has "+QMTSTAT..."
@@ -500,15 +524,8 @@ bool cell_location(void){
 	}
 	
 	//----------- STEP 3: Use Geolocation API to approximate location for each tower -------------//
-	//TRY_COMMAND("AT+QICSGP=1,3,\"internet.itelcel.com\",\"\",\"\",0", TEMP, sizeof(TEMP)); //maybe not needed here because its in init
-	TRY_COMMAND("AT+QHTTPCFG=\"contextid\",1", TEMP, sizeof(TEMP));
 	TRY_COMMAND("AT+QIACT=1", TEMP, sizeof(TEMP));
-	TRY_COMMAND("AT+QHTTPCFG=\"sslctxid\",1", TEMP, sizeof(TEMP));
 	TRY_COMMAND("AT+QSSLCFG=\"sni\",1,1", TEMP, sizeof(TEMP));
-	//DEBUG UNCOMMENT THESE!!!!
-	//TRY_COMMAND("AT+QSSLCFG=\"sslversion\",1,4", TEMP, sizeof(TEMP));
-	//TRY_COMMAND("AT+QSSLCFG=\"ciphersuite\",1,0xFFFF", TEMP, sizeof(TEMP));
-	//TRY_COMMAND("AT+QSSLCFG=\"seclevel\",1,0", TEMP, sizeof(TEMP));
 	
 	//NOTE: AJAX url seems more accurate on initial tests...
 	snprintf(API_URL, sizeof(API_URL), "https://opencellid.org/ajax/searchCell.php?&mcc=%u&mnc=%u&lac=%u&cell_id=%lu",
@@ -518,8 +535,6 @@ bool cell_location(void){
 	
 	char command[24];
 	snprintf(command, sizeof(command), "AT+QHTTPURL=%d,10", strlen(API_URL));
-	//DrvUSART_SendStr(command);
-	//processData(TEMP, sizeof(TEMP));
 	if (!TRY_COMMAND(command, TEMP, sizeof(TEMP))) {
 		return false;
 	}
@@ -552,7 +567,7 @@ bool cell_location(void){
 		if (sscanf(ptr, "\"lon\":\"%[^\"]\",\"lat\":\"%[^\"]\"", lat, lon) != 2) {
 			return false;
 		}
-		////debug cleaning (maybe use a TEMP for everything except lat and lon)
+		////cleaning (maybe use a TEMP for everything except lat and lon)
 		//snprintf(TEMP, sizeof(TEMP), "%d,%s,%s,0", 6, lon, lat); //works! (value,lat,lon,alt)
 		//mqtt_pub_str("josepamb/feeds/beacon.gps/csv", TEMP);
 		//_delay_ms(1000);
@@ -641,15 +656,8 @@ bool cell_location(void) {
 	}
 	
 	//----------- STEP 3: Use Geolocation API to approximate location for each tower -------------//
-	//TRY_COMMAND("AT+QICSGP=1,3,\"internet.itelcel.com\",\"\",\"\",0", TEMP, sizeof(TEMP)); //maybe not needed here because its in init
-	TRY_COMMAND("AT+QHTTPCFG=\"contextid\",1", TEMP, sizeof(TEMP));
 	TRY_COMMAND("AT+QIACT=1", TEMP, sizeof(TEMP));
-	TRY_COMMAND("AT+QHTTPCFG=\"sslctxid\",1", TEMP, sizeof(TEMP));
 	TRY_COMMAND("AT+QSSLCFG=\"sni\",1,1", TEMP, sizeof(TEMP));
-	//DEBUG UNCOMMENT THESE!!!!
-	//TRY_COMMAND("AT+QSSLCFG=\"sslversion\",1,4", TEMP, sizeof(TEMP));
-	//TRY_COMMAND("AT+QSSLCFG=\"ciphersuite\",1,0xFFFF", TEMP, sizeof(TEMP));
-	//TRY_COMMAND("AT+QSSLCFG=\"seclevel\",1,0", TEMP, sizeof(TEMP));
 	
 	//NOTE: AJAX url seems more accurate on initial tests...
 	snprintf(API_URL, sizeof(API_URL), "https://opencellid.org/ajax/searchCell.php?&mcc=%u&mnc=%u&lac=%u&cell_id=%lu",
@@ -760,6 +768,7 @@ bool cell_location(void) {
 	}
 
 	ptr = TEMP;
+	//while if i ever want to change logic to weighted approach (using AT+CELLSCAN)
 	while ((ptr = strstr(ptr, "+QENG: ")) != NULL) {
 		ptr += strlen("+QENG: ");
 		if (strstr(ptr, "\"GSM\"") != NULL) {

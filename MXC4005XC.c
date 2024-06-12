@@ -8,6 +8,9 @@
 #include "MXC4005XC.h"
 #include "state_machine.h"
 
+#include "bg95_mqtt.h" //debug remove
+
+/*
 ISR(INT0_vect){
 	//interrupcion de acelerometro INT pin
 	//1 leer registro STATUS o INT_SRC0 podria ser aqui pero funcion para leer tiene busy waits
@@ -18,8 +21,31 @@ ISR(INT0_vect){
 	//debug try this below?
 	//u8 interrupt_source = LeeMXC4005XC_NI(MXC4005XC_REG_INT_SRC0); //read INT source register 0x00
 	//EscribeMXC4005XC_NI(MXC4005XC_REG_INT_CLR0, interrupt_source); //clear INT source bits by writing a 1 in CLR
-	estado = movimiento; //aqui se hace todo lo de leer data, clear, etc (mas limpio creo)
+	
+	//estado = movimiento; //aqui se hace todo lo de leer data, clear, etc (mas limpio creo)
+	mqtt_pub_str("josepamb/feeds/welcome-feed", "se moviooo");
+	//_delay_ms(1000);
 }
+*/
+ISR(INT0_vect){
+	//mqtt_pub_str("josepamb/feeds/welcome-feed", "se moviooo");
+	u8 valor = LeeMXC4005XC_NI(MXC4005XC_REG_INT_SRC0); // Lee fuente de interrupcion
+	EscribeMXC4005XC_NI(MXC4005XC_REG_INT_CLR0, 0xcf); // Borra fuente de interrpcion
+	
+	//valor = LeeMXC4005XC_NI(0x01);
+	//EscribeMXC4005XC_NI(0x01, valor);
+	
+	//u8 cpyValor= valor;
+	//valor = valor & 0x0f;
+	//cpyValor = cpyValor & 0xf0;
+	//PORTB |= valor;
+	//PORTD |= cpyValor;
+	PORTB |= (1<<PORTB5);
+	_delay_ms(100);
+	PORTB &= ~(1<<PORTB5);
+	EIFR |= (1<< INTF0); // Borra bandera de interrupcopn externa
+}
+
 
 void MXC4005XC_init(void){
 	// Configure INT0 (PD2) pin for falling edge trigger
@@ -27,7 +53,7 @@ void MXC4005XC_init(void){
 	EICRA &= ~(1 << ISC00);
 	EIMSK |= (1 << INT0); // Enable external interrupt INT0
 	EscribeMXC4005XC_NI(MXC4005XC_REG_INT_MASK0, MXC4005XC_INT_MASK0_EN); //enable all INT_MASK0 Interrupts
-	//EscribeMXC4005XC_NI(MXC4005XC_REG_INT_MASK0, MXC4005XC_INT_MASK1_EN); //enable all INT_MASK1 Interrupts //debug
+	EscribeMXC4005XC_NI(MXC4005XC_REG_INT_MASK1, MXC4005XC_INT_MASK1_EN); //enable all INT_MASK1 Interrupts //debug
 	
 	EscribeMXC4005XC_NI(MXC4005XC_REG_CTRL, MXC4005XC_CMD_2G_POWER_ON); //initial setup 2g
 	//EscribeMXC4005XC_NI(MXC4005XC_REG_DETECTION, MXC4005XC_DETECTION_PARAMS) //debug
@@ -101,10 +127,28 @@ void MXC4005XC_GetData_real(float *data)
 		data[i] = (float)((int16_t)(data_reg[i*2]<<8 | data_reg[i*2 + 1]) >> 4);
 		data[i] /= MXC4005XC_2G_SENSITIVITY; // convert acceleration to g
 	}
-	//debug TRY:
-	//int8_t val = (int8_t)data[3]; // cast into signed 8 bit int
-	//float temp = MXC4005XC_T_ZERO - (float)val * MXC4005XC_T_SENSITIVITY;
 	data[3] = (float)data_reg[6] * MXC4005XC_T_SENSITIVITY + MXC4005XC_T_ZERO; // convert to Celsius //DEBUG compare to get temperature
+}
+
+//Should work
+float MXC4005XC_Get_Temperature(void)
+{
+	//MXC4005_REG_TOUT
+	/*MXC400xXC contains an on-chip temperature sensor whose output can be read through the I2C
+	interface. The output is in 2's complement format. The nominal value of TOUT[7:0] is 0 at a 
+	temperature of 25°C, and the sensitivity of the output is approximately 0.586°C/LSB.
+	*/	
+	
+	//u8 raw_data = LeeMXC4005XC_NI(MXC4005_REG_TOUT);
+	//int8_t val = (int8_t)raw_data; // cast into signed 8 bit int
+	//val = ~val + 1; // re-apply 2's complement because response comes in that format
+	//float temp = MXC4005XC_T_ZERO - (float)val * MXC4005XC_T_SENSITIVITY; //DEBUG sensitivity
+	//return temp;
+	
+	u8 raw_data = LeeMXC4005XC_NI(MXC4005_REG_TOUT);
+	int8_t val = (int8_t)raw_data; // cast into signed 8 bit int
+	float temp = (float)val * MXC4005XC_T_SENSITIVITY + MXC4005XC_T_ZERO; //DEBUG sensitivity
+	return temp;
 }
 
 //debug??
@@ -124,7 +168,8 @@ void MXC4005XC_GetData_real(float *data)
 	////}
 	//return orxyz;
 //}
-//
+
+
 ////Should work but debug
 //void MXC4005XC_Get_Acceleration(u8 data[6])
 //{
@@ -142,24 +187,6 @@ void MXC4005XC_GetData_real(float *data)
 		//data[i] = (float)data[i] / MXC4005XC_2G_SENSITIVITY; // convert acceleration to g
 	//}
 //}
-
-//Should work
-float MXC4005XC_Get_Temperature(void)
-{
-	//MXC4005_REG_TOUT
-	/*MXC400xXC contains an on-chip temperature sensor whose output can be read through the I2C
-	interface. The output is in 2's complement format. The nominal value of TOUT[7:0] is 0 at a 
-	temperature of 25°C, and the sensitivity of the output is approximately 0.586°C/LSB.
-	*/	
-	
-	u8 raw_data = LeeMXC4005XC_NI(MXC4005_REG_TOUT);
-	//mqtt(raw_data); // DEBUG: publish raw register readings to mqtt for debugging:
-	int8_t val = (int8_t)raw_data; // cast into signed 8 bit int
-	//mqtt(val); // DEBUG: publish cast value for debugging:
-	// redundant: //val = ~val + 1; // re-apply 2's complement because response comes in that format
-	float temp = MXC4005XC_T_ZERO - (float)val * MXC4005XC_T_SENSITIVITY; //DEBUG sensitivity
-	return temp;
-}
 
 /*
 // debug ??

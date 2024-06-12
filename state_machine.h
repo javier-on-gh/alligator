@@ -12,20 +12,16 @@
 volatile enum state {dormido, muestreo, envio, movimiento} estado;
 
 void computeStateMachine(void);
+void computeStateMachine_fake(void);
+
 u16 iluminacion(void);
 void bg95_On(void);
 void bg95_Init(void);
 
-//void sendATCommands(char *); //debug cleaning
-bool GPS(void);
-//bool TRY_COMMAND(const char *message, char *buffer, size_t buffersize);
-bool TRY_COMMAND(const char *message, char *buffer, size_t buffersize); //debug test
-//bool handleResponse(char *, size_t);
+//bool GPS(void); //cleaning
+bool TRY_COMMAND(const char *message, char *buffer, size_t buffersize);
 bool handleError(char *, size_t);
 
-void computeStateMachine_fake(void);
-
-bool cell_location(void); //debug new
-//void queclocator(void); //debug new
+bool cell_location(void);
 
 #endif /* STATE_MACHINE_H_ */

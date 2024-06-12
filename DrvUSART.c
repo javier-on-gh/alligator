@@ -62,23 +62,6 @@ void DrvUSART_Init(void)
 	UBRR0L = USART_UBRR & 0xff;
 }
 
-/******* without interrupts, directly on register *******/
-//void DrvUSART_SendChar(u8 u8Char)
-//{
-	//while(!(UCSR0A & (1 << UDRE0)));
-	//UDR0 = u8Char;
-//}
-
-//debug cleaning
-//void copyString(char *dest, const char *src, size_t destSize) {
-	//size_t i;
-	//for (i = 0; i < destSize - 1 && src[i] != '\0'; ++i) {
-		//dest[i] = src[i];
-	//}
-	//dest[i] = '\0'; // Ensure null termination
-//}
-
-
 void DrvUSART_SendStr(const char *str) {
 	const char *pt = str;
 	while(*pt)
@@ -91,63 +74,16 @@ void DrvUSART_SendStr(const char *str) {
 	while(!(UCSR0A & (1 << UDRE0)));
 	UDR0 = '\r';
 	
-	//snprintf(lastCommand, sizeof(lastCommand), "%s", str); //debug cleaning
-	//copyString(lastCommand, str, sizeof(lastCommand));
 	size_t i;
 	for (i = 0; i < sizeof(lastCommand) - 1 && str[i] != '\0'; ++i) {
 		lastCommand[i] = str[i];
 	}
 	 lastCommand[i] = '\0';
 	
-	_delay_ms(100); //IMPORTANT (cambiar por interrupcion TXC)
+	_delay_ms(100); //IMPORTANT (cambiar por interrupcion TXC? no)
 }
 
-//u8 DrvUSART_GetChar(void) //debug cleaning
-//{
-	//while(!(UCSR0A & (1 << RXC0)));
-	//return UDR0;
-//}
-
-/******* With interrupts, using circular buffers *******/
-
-/* For storing everything except echoed command in linear buffer */
-/* WORKS PERFECT WITH AND WITHOUT ECHO */
-//void processData(char *buff, size_t buffsize) {
-	////memset(buff, 0, buffsize); // clear buff //debug cleaning
-	//for (size_t i = 0; i < buffsize; ++i) {
-		//buff[i] = 0; // Set each byte to zero
-	//}
-	//int i = 0;
-	//
-	//////DEBUG: Comment for debugging with echo / Uncomment if echo is not necessary
-	////////////////************************************************////////////
-	////char *lastCommandPtr = &rxBuffer[rxReadPos]; //points to first character of received response each time.
-	////if(strncmp(lastCommandPtr, lastCommand, strlen(lastCommand)) == 0){ //compares pointer to lastcommand
-		////lastCommandPtr += strlen(lastCommand)+2; //moves pointer to after echoed command+\r\n
-		////rxReadPos = lastCommandPtr - rxBuffer; //gives you index where the pointer points
-	////}
-	////////////////************************************************////////////
-	//
-	//while (rxReadPos != rxWritePos && i < buffsize - 1) {
-		//if (rxBuffer[rxReadPos] == '\r') {
-			////buff[i] = rxBuffer[rxReadPos];
-			////i++;
-		//}
-		//else if (rxBuffer[rxReadPos] == '\n') {
-			//buff[i] = rxBuffer[rxReadPos]; //debug: store line feeds for separating string
-			//i++;
-		//}
-		//else {
-			//buff[i] = rxBuffer[rxReadPos]; //store response
-			//i++;
-		//}
-		//rxReadPos = (rxReadPos + 1) % BUFFER_SIZE;
-	//}
-	//buff[i] = '\0'; //null terminate
-//}
-
 void processData_wait(char *buff, size_t buffsize, int timeout_ms) {
-	//memset(buff, 0, buffsize); // clear buff //debug cleaning
 	for (size_t i = 0; i < buffsize; ++i) {
 		buff[i] = 0; // Set each byte to zero
 	}
@@ -175,8 +111,8 @@ void processData_wait(char *buff, size_t buffsize, int timeout_ms) {
 			//i++;
 		}
 		else if (rxBuffer[rxReadPos] == '\n') {
-			//buff[i] = rxBuffer[rxReadPos]; //store line feeds for separating string
-			//i++;
+			buff[i] = rxBuffer[rxReadPos]; //IMPORTANT DONT COMMENT
+			i++;
 		}
 		else {
 			buff[i] = rxBuffer[rxReadPos]; //store response
@@ -186,20 +122,3 @@ void processData_wait(char *buff, size_t buffsize, int timeout_ms) {
 	}
 	buff[i] = '\0'; //null terminate
 }
-
-// FOR TXC INTERRUPT //debug cleaning
-//void appendSerial(char c) {
-	//txBuffer[txWritePos] = c;
-	//txWritePos = (txWritePos + 1) % BUFFER_SIZE;
-//}
-//
-//void serialWrite(char *str) {
-	//for(uint8_t i = 0; i < strlen(str); i++) {
-		//appendSerial(str[i]);
-	//}
-	//appendSerial('\r');
-	//if(UCSR0A & (1 << UDRE0)) {
-		//UDR0 = 0; //dummy byte to trigger ISR
-	//}
-	//snprintf(lastCommand, sizeof(lastCommand), "%s", str);
-//}

@@ -10,7 +10,6 @@
 #include "state_machine.h"
 
 extern char lastCommand[20];
-//extern char TEMP[128]; //debug cleaning
 
 bool handleMoveOn(void){return true;}
 

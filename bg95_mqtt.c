@@ -9,20 +9,12 @@
 #include "bg95_mqtt.h"
 #include "state_machine.h"
 
-extern float ACCEL_BUFF[4];
-
-// ** TESTING CLOUD ** //
 #define COMMAND_BUFF_SIZE 128
-//debug cleaning:
-//char ATcommand[COMMAND_BUFF_SIZE];  // temporary buffer to hold ATcommand
-
-//extern char TEMP[128]; //debug cleaning
 
 //nothing for now:
 bool mqtt_init(void){
 	char TEMP[128] = {0};
-	//TODO: CAMBIAR TODO POR TRYCOMMAND
-	//wait for network to respond debug
+	//TODO: CAMBIAR TODO POR TRYCOMMAND and wait for network to respond debug
 	
 	/*
 		APN:	internet.itelcel.com
@@ -62,7 +54,6 @@ bool mqtt_init(void){
 	////processData(TEMP, sizeof(TEMP));
 	//TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 //}
-//debug cleaning
 void mqtt_pub_str(const char *topic, const char *message) {
 	char ATcommand[COMMAND_BUFF_SIZE];
 	char TEMP[128] = {0};
@@ -72,7 +63,6 @@ void mqtt_pub_str(const char *topic, const char *message) {
 		ATcommand[idx] = prefix[idx];
 		idx++;
 	}
-
 	// Add the topic
 	size_t i = 0;
 	while (topic[i] != '\0' && idx < COMMAND_BUFF_SIZE - 1) {
@@ -80,7 +70,6 @@ void mqtt_pub_str(const char *topic, const char *message) {
 		idx++;
 		i++;
 	}
-
 	// Add the separator
 	const char *separator = "\",\"";
 	i = 0;
@@ -89,7 +78,6 @@ void mqtt_pub_str(const char *topic, const char *message) {
 		idx++;
 		i++;
 	}
-
 	// Add the message
 	i = 0;
 	while (message[i] != '\0' && idx < COMMAND_BUFF_SIZE - 1) {
@@ -97,13 +85,10 @@ void mqtt_pub_str(const char *topic, const char *message) {
 		idx++;
 		i++;
 	}
-
 	// End of the command
 	ATcommand[idx++] = '\"';
 	ATcommand[idx] = '\0';  // Null-terminate the string
 
-	// Send the command
-	//DrvUSART_SendStr(ATcommand);
 	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
 void mqtt_pub_float(const char *topic, const float message){
@@ -123,15 +108,12 @@ void mqtt_pub_float(const char *topic, const float message){
 	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%s%d.%02d\"",
 	topic, (message < 0 && integer_part == 0) ? "-" : "", integer_part, fractional_part);
 	
-	
-	//DrvUSART_SendStr(ATcommand);
 	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
 void mqtt_pub_unsigned_short(const char *topic, const unsigned short message){
 	char ATcommand[COMMAND_BUFF_SIZE];
 	char TEMP[128] = {0};
 	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%u\"", topic, message);
-	//DrvUSART_SendStr(ATcommand);
 	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
 void mqtt_pub_char(const char *topic, const char message){
@@ -140,7 +122,6 @@ void mqtt_pub_char(const char *topic, const char message){
 	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%x\"", topic, message);
 	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
-
 //test:
 /*
 void mqtt_pub_char(const char *topic, const char message) {
@@ -181,12 +162,14 @@ void mqtt_pub_char(const char *topic, const char message) {
 }
 */
 
-/*
 void mqtt_pub_int(const char *topic, const int message){
+	char ATcommand[COMMAND_BUFF_SIZE];
+	char TEMP[128] = {0};
 	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%d\"", topic, message);
-	DrvUSART_SendStr(ATcommand);
+	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
 
+/*
 //for observing acceleration data in cloud
 //call as: mqtt_pub_float_buffer(
 void mqtt_pub_float_buffer(const char *topic, float *message, size_t buffersize){

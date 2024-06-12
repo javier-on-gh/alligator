@@ -22,7 +22,7 @@
 
 #include "allinone.h"
 #include "state_machine.h"
-#include "bg95_mqtt.h" //debug quitar
+#include "bg95_mqtt.h" //debug quitar al final
 #include "MXC4005XC.h"
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
@@ -39,7 +39,7 @@ ISR(WDT_vect)
 	cntTE++;
 	
 	//else if gives priority to the first conditional
-	if (cntTE==55)//2700) // Actualiza la nube cada 24 horas //debug new
+	if (cntTE==55)//2700) // Actualiza la nube cada 24 horas
 	{
 		cntTE = 0;
 		estado = envio;
@@ -56,7 +56,7 @@ int main(void)
 	DrvSYS_Init();
 	DrvUSART_Init();
 	DrvTWI_Init();
-	//MXC4005XC_init(); //debug new
+	MXC4005XC_init(); //debug new
 	
 	cntTM = 0;
 	cntTE = 0;
@@ -85,11 +85,30 @@ int main(void)
 			
 	//bg95_On(); //debug new
 	bg95_Init();
-	//PORTB = 0x04;
+	//mqtt_init();
+	//while (!mqtt_init()) {
+		 //_delay_ms(1000);
+	//}
+		
+	mqtt_pub_str("josepamb/feeds/welcome-feed", "---- START! ----");
+	//_delay_ms(1000);
 	
+	////unsigned char registro = MXC4005XC_REG_INT_SRC0;
+	//unsigned char registro = MXC4005XC_REG_INT_SRC1;
+	////unsigned char registro = MXC4005XC_REG_STATUS;
+	////unsigned char registro = MXC4005XC_REG_DETECTION;
+	////unsigned char registro = MXC4005XC_REG_CTRL;
+	//unsigned char orxyz = 0x00;
 	while (1)
 	{
-		computeStateMachine_fake();
+		//orxyz = LeeMXC4005XC_NI(registro);
+		//mqtt_pub_char("josepamb/feeds/welcome-feed", orxyz);
+		//_delay_ms(1000);
+		//EscribeMXC4005XC_NI(registro, orxyz);
+		//
+		//_delay_ms(3000);
+		
+		computeStateMachine_fake(); //para probar con mqtt ya activado
 		//computeStateMachine(); //real SM
 	}
 }

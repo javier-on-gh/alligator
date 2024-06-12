@@ -42,13 +42,8 @@ enum emUcpol0
 #endif
 	
 void DrvUSART_Init(void);
-void DrvUSART_SendChar(u8 u8Char);
+//void DrvUSART_SendChar(u8 u8Char); //cleaning
 void DrvUSART_SendStr(const char* str);
-//u8 DrvUSART_GetChar(void); //debug cleaning
-void processData(char *, size_t);
 void processData_wait(char *buff, size_t buffsize, int timeout_ms);
-
-//void appendSerial(char); //debug cleaning
-//void serialWrite(char *); //debug cleaning
 
 #endif
