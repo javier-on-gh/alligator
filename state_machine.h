@@ -16,10 +16,12 @@ void computeStateMachine_fake(void);
 
 u16 iluminacion(void);
 void bg95_On(void);
-void bg95_Init(void);
+void bg95_init(void);
 
-//bool GPS(void); //cleaning
+bool GPS(void); //cleaning
 bool TRY_COMMAND(const char *message, char *buffer, size_t buffersize);
+void sendATCommand(const char *command);
+void wait_response(const char* command, const char* expected_response);
 bool handleError(char *, size_t);
 
 bool cell_location(void);

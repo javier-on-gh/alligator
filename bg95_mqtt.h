@@ -14,7 +14,7 @@ void mqtt_pub_str(const char *topic, const char *message);
 void mqtt_pub_char(const char *topic, const char message);
 void mqtt_pub_unsigned_short(const char *topic, unsigned short message);
 void mqtt_pub_float(const char *topic, const float message);
-void mqtt_pub_int(const char *topic, const int message);
+void mqtt_pub_int(const char *topic, const int message); //comment
 //void mqtt_pub_float_buffer(const char *topic, float *message, size_t buffersize);
 void mqtt_disconnect(void);
 

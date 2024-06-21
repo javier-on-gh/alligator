@@ -6,16 +6,8 @@
  *
  * Created: 01/04/2024 08:08:44 a. m.
  * Author : JAHH
- 
- * Primera solucion para controlar el modulo BG95 M3
- *
- * Etapa 1:
- * 01/04/24	Activar OLED ssd1306 para depurar las respuestas del modulo BG95
- * Se unen los archvos generados por el builder LGT con un proyecto anterior con OLED
- * Se implementa una maquina de estados para mandar y recibir comandos con el BG95
  */ 
 
-/* MAIN NEW USART */
 #ifndef F_CPU
 #define F_CPU 9216000UL
 #endif
@@ -32,19 +24,36 @@ extern void init_modules(void);
 
 volatile int cntTM = 0; //important as volatile? try non volatile
 volatile int cntTE = 0;
+//ISR(WDT_vect)
+//{
+	//WDTCSR |= (1<<WDIF); // Borra bandera
+	//cntTM++;
+	//cntTE++;
+	//
+	////else if gives priority to the first conditional
+	//if (cntTE==330) // cada 5.5 minutos
+	//{
+		//cntTE = 0;
+		//estado = envio;
+	//}
+	//else if (cntTM==184)//(cntTM==113) //cada 3.06 minutos
+	//{
+		//cntTM = 0;
+		//estado = muestreo;
+	//}
+//}
 ISR(WDT_vect)
 {
-	WDTCSR |= (1<<WDIF); // Borra bandera
+	WDTCSR |= (1<<WDIF);
 	cntTM++;
 	cntTE++;
 	
-	//else if gives priority to the first conditional
-	if (cntTE==55)//2700) // Actualiza la nube cada 24 horas
+	if (cntTE==165)
 	{
 		cntTE = 0;
 		estado = envio;
 	}
-	else if (cntTM==23)//(cntTM==113) // Muestrea sensores cada hora
+	else if (cntTM==46)
 	{
 		cntTM = 0;
 		estado = muestreo;
@@ -56,7 +65,6 @@ int main(void)
 	DrvSYS_Init();
 	DrvUSART_Init();
 	DrvTWI_Init();
-	MXC4005XC_init(); //debug new
 	
 	cntTM = 0;
 	cntTE = 0;
@@ -75,40 +83,27 @@ int main(void)
 	
 	SMCR = 0x05; // modo = power down, habilita sleep
 	
-	DDRB = 0xff; // prende un led o...
-	PORTB = 0x01; 
+	//DDRB = 0xff; // prende un led o...
+	//PORTB = 0x01; 
 	_delay_ms(500);
+	
 	PORTB = 0x00;
 	DDRD |= (0x01<<PORTD1);
 	PORTD = 0x02;
 	DDRC |= (1 << PORTC3); //POWER PORT
-			
-	//bg95_On(); //debug new
-	bg95_Init();
-	//mqtt_init();
-	//while (!mqtt_init()) {
-		 //_delay_ms(1000);
-	//}
-		
-	mqtt_pub_str("josepamb/feeds/welcome-feed", "---- START! ----");
-	//_delay_ms(1000);
 	
-	////unsigned char registro = MXC4005XC_REG_INT_SRC0;
-	//unsigned char registro = MXC4005XC_REG_INT_SRC1;
-	////unsigned char registro = MXC4005XC_REG_STATUS;
-	////unsigned char registro = MXC4005XC_REG_DETECTION;
-	////unsigned char registro = MXC4005XC_REG_CTRL;
-	//unsigned char orxyz = 0x00;
-	while (1)
-	{
-		//orxyz = LeeMXC4005XC_NI(registro);
-		//mqtt_pub_char("josepamb/feeds/welcome-feed", orxyz);
-		//_delay_ms(1000);
-		//EscribeMXC4005XC_NI(registro, orxyz);
-		//
-		//_delay_ms(3000);
-		
-		computeStateMachine_fake(); //para probar con mqtt ya activado
-		//computeStateMachine(); //real SM
+	bg95_On(); //debug new
+	_delay_ms(5000);
+	
+	bg95_init(); //TODO: meter el init en bg95_on! al final
+	//MXC4005XC_init(); //debug new
+	
+	mqtt_init();
+	mqtt_pub_str("josepamb/feeds/welcome-feed", "---- START! ----");
+	_delay_ms(1000);
+	mqtt_disconnect();
+	
+	while(1){
+		computeStateMachine_fake();
 	}
 }

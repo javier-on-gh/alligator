@@ -11,32 +11,15 @@
 
 #define COMMAND_BUFF_SIZE 128
 
-//nothing for now:
+/*
 bool mqtt_init(void){
-	char TEMP[128] = {0};
-	//TODO: CAMBIAR TODO POR TRYCOMMAND and wait for network to respond debug
+	char TEMP[128] = {0};	
 	
-	/*
-		APN:	internet.itelcel.com
-		Nombre de usuario:	webgprs
-		Contraseña:	webgprs2002
-		Authenticacion: PAP --> 1
-		Context type: IPv4/v6 --> 3
-		//AT+QICSGP=<contextID>[,<context_type>,<APN>[,<username>,<password>[,<authentication>]]]
-	*/
-	////PDP context: AT+QICSGP=<contextID>[,<context_type>,<APN>[,<username>,<password>[,<authentication>]]]
-	
-	
+	TRY_COMMAND("AT+QGPSCFG=\"priority\",1,1", TEMP, sizeof(TEMP)); //redundant just in case
+	_delay_ms(1000);	
 	TRY_COMMAND("AT+QIACT=1", TEMP, sizeof(TEMP)); //Activate PDP context
-	////DEBUG MODIFY THIS:
-	//TRY_COMMAND("AT+QIACT?", TEMP, sizeof(TEMP)); //Check if activated
-	//if(strstr(TEMP, "+QIACT: 1,1") == NULL){
-		//return false;
-	//}
-	
-	////AT+QMTCFG="pdpcid",<client_idx>[,<cid>] AT+QMTCFG="pdpcid",0,1
-	TRY_COMMAND("AT+QMTCFG=\"pdpcid\",0,1", TEMP, sizeof(TEMP));
-	TRY_COMMAND("AT+QMTCFG=\"ssl\",0,1,0", TEMP, sizeof(TEMP));
+	//REDUNDANT BECAUSE ITS IN BG95INIT (REMOVE al final):
+	TRY_COMMAND("AT+QSSLCFG=\"sslversion\",0,4;+QSSLCFG=\"ciphersuite\",0,0xFFFF;+QSSLCFG=\"seclevel\",0,0;+QSSLCFG=\"ignorelocaltime\",0,1;+QMTCFG=\"pdpcid\",0,1;+QMTCFG=\"ssl\",0,1,0", TEMP, sizeof(TEMP));
 	
 	//----- Open the client
 	if(TRY_COMMAND("AT+QMTOPEN=0,\"io.adafruit.com\",8883", TEMP, sizeof(TEMP))){
@@ -46,14 +29,25 @@ bool mqtt_init(void){
 		return false;
 	}
 }
+*/
+bool mqtt_init(void){
+	char TEMP[128] = {0};
+	//cli();
+	TRY_COMMAND("AT+QGPSCFG=\"priority\",1,1", TEMP, sizeof(TEMP));//redundant just in case
+	_delay_ms(2000); // change of priority delay
+		
+	//REDUNDANT BECAUSE ITS IN BG95INIT (REMOVE al final):
+	TRY_COMMAND("AT+QSSLCFG=\"sslversion\",0,4;+QSSLCFG=\"ciphersuite\",0,0xFFFF;+QSSLCFG=\"seclevel\",0,0;+QSSLCFG=\"ignorelocaltime\",0,1;+QMTCFG=\"pdpcid\",0,1;+QMTCFG=\"ssl\",0,1,0", TEMP, sizeof(TEMP));
+	TRY_COMMAND("AT+QIACT=1",TEMP,sizeof(TEMP)); //wait for response at least 1 second here (already in trycommand)
+	//_delay_ms(1000); //brute force wait for context activation (might need it)
+		
+	if(TRY_COMMAND("AT+QMTOPEN=0,\"io.adafruit.com\",8883", TEMP, sizeof(TEMP))){
+		return TRY_COMMAND("AT+QMTCONN=0,\"bg95\",\"josepamb\",\"\"", TEMP, sizeof(TEMP));
+	}
+	//sei();
+	return false;
+}
 
-//void mqtt_pub_str(const char *topic, const char *message){
-	//char TEMP[128] = {0};
-	//snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%s\"", topic, message);
-	////DrvUSART_SendStr(ATcommand);
-	////processData(TEMP, sizeof(TEMP));
-	//TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
-//}
 void mqtt_pub_str(const char *topic, const char *message) {
 	char ATcommand[COMMAND_BUFF_SIZE];
 	char TEMP[128] = {0};
@@ -122,46 +116,6 @@ void mqtt_pub_char(const char *topic, const char message){
 	snprintf(ATcommand, COMMAND_BUFF_SIZE, "AT+QMTPUBEX=0,1,1,0,\"%s\",\"%x\"", topic, message);
 	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
 }
-//test:
-/*
-void mqtt_pub_char(const char *topic, const char message) {
-	char ATcommand[COMMAND_BUFF_SIZE];
-	char TEMP[128] = {0};
-	const char *prefix = "AT+QMTPUBEX=0,1,1,0,\"";
-	const char *suffix = "\",\"";
-
-	// Copy the prefix
-	char *ptr = ATcommand;
-	while (*prefix) {
-		*ptr++ = *prefix++;
-	}
-
-	// Copy the topic
-	while (*topic) {
-		*ptr++ = *topic++;
-	}
-
-	// Copy the middle part of the command
-	const char *middle = suffix;
-	while (*middle) {
-		*ptr++ = *middle++;
-	}
-
-	// Convert the character to hexadecimal and copy it
-	static const char hex_digits[] = "0123456789ABCDEF";
-	*ptr++ = hex_digits[(message >> 4) & 0xF];
-	*ptr++ = hex_digits[message & 0xF];
-
-	// Copy the closing quote
-	*ptr++ = '\"';
-
-	// Null-terminate the string
-	*ptr = '\0';
-
-	TRY_COMMAND(ATcommand, TEMP, sizeof(TEMP));
-}
-*/
-
 void mqtt_pub_int(const char *topic, const int message){
 	char ATcommand[COMMAND_BUFF_SIZE];
 	char TEMP[128] = {0};
@@ -196,14 +150,15 @@ void mqtt_pub_float_buffer(const char *topic, float *message, size_t buffersize)
 */
 
 void mqtt_disconnect(void){
-	DrvUSART_SendStr("AT+QMTCLOSE=0");
-	DrvUSART_SendStr("AT+QMTDISC=0");
-	DrvUSART_SendStr("AT+QSSLCLOSE=0");
-	DrvUSART_SendStr("AT+QIDEACT=1");
+	char TEMP[128] = {0};
+	//DrvUSART_SendStr("AT+QMTCLOSE=0");
+	//DrvUSART_SendStr("AT+QMTDISC=0");
+	//DrvUSART_SendStr("AT+QSSLCLOSE=0");
+	//DrvUSART_SendStr("AT+QIDEACT=1");
 	
 	////close everyting
-	//TRY_COMMAND("AT+QMTCLOSE=0", TEMP, sizeof(TEMP));
-	//TRY_COMMAND("AT+QMTDISC=0", TEMP, sizeof(TEMP));
-	//TRY_COMMAND("AT+QSSLCLOSE=1,10?", TEMP, sizeof(TEMP));
-	//TRY_COMMAND("AT+QIDEACT=1", TEMP, sizeof(TEMP));
+	TRY_COMMAND("AT+QMTCLOSE=0", TEMP, sizeof(TEMP));
+	TRY_COMMAND("AT+QMTDISC=0", TEMP, sizeof(TEMP));
+	//TRY_COMMAND("AT+QSSLCLOSE=0", TEMP, sizeof(TEMP));
+	TRY_COMMAND("AT+QIDEACT=1", TEMP, sizeof(TEMP));
 }

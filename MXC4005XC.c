@@ -28,7 +28,7 @@ ISR(INT0_vect){
 }
 */
 ISR(INT0_vect){
-	//mqtt_pub_str("josepamb/feeds/welcome-feed", "se moviooo");
+	mqtt_pub_str("josepamb/feeds/welcome-feed", "se moviooo"); //debug testing remove
 	u8 valor = LeeMXC4005XC_NI(MXC4005XC_REG_INT_SRC0); // Lee fuente de interrupcion
 	EscribeMXC4005XC_NI(MXC4005XC_REG_INT_CLR0, 0xcf); // Borra fuente de interrpcion
 	

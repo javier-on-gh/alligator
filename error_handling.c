@@ -27,25 +27,8 @@ bool handleNoErrorCode(void){
 		// already connected
 		return true; //TODO: handle here debug
 	}
-	else{
-		return true;
-	}
 	//if not connection related:
 	return true;
-}
-
-bool handle505(void){
-	int comparison = strncmp("AT+QGPSEND", lastCommand, strlen(lastCommand));
-	if (comparison == 0){ //if strings are equal
-		return true; //already off
-	}
-	////debug cleaning
-	//if (strstr(lastCommand, "AT+QGPSEND") != NULL){
-		//return true;
-	//}
-	DrvUSART_SendStr("AT+QGPS=1");
-	//TRY_COMMAND("AT+QGPS=1", TEMP, sizeof(TEMP)); //for printing/debugging
-	return false;
 }
 
 bool handleconnection(char *buffer, size_t buffersize){
@@ -107,4 +90,18 @@ bool handleconnection(char *buffer, size_t buffersize){
 	
 	//connected successfully. NOTE: wont enter here if successful
 	return true;
+}
+
+bool handle505(void){
+	int comparison = strncmp("AT+QGPSEND", lastCommand, strlen(lastCommand));
+	if (comparison == 0){ //if strings are equal
+		return true; //already off
+	}
+	////debug cleaning
+	//if (strstr(lastCommand, "AT+QGPSEND") != NULL){
+	//return true;
+	//}
+	DrvUSART_SendStr("AT+QGPS=1");
+	//TRY_COMMAND("AT+QGPS=1", TEMP, sizeof(TEMP)); //for printing/debugging
+	return false;
 }
